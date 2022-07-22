@@ -14,18 +14,19 @@ type Configuration struct {
 	Address struct {
 		Url string
 	}
-	SocketServer  struct {
+	SocketServer struct {
 		Host string
 		Port string
 	}
 	Token   string
 	Storage struct {
-		Atlas    bool
-		User     string
-		Pass     string
-		Host     string
-		Port     string
-		Database string
+		Atlas      bool
+		User       string
+		Pass       string
+		Host       string
+		Port       string
+		Database   string
+		Collection string
 	}
 	Operations []string
 	StartBlock int

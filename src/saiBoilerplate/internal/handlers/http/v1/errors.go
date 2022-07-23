@@ -6,8 +6,13 @@ type ServiceErr struct {
 }
 
 var (
-	errInternalServerErr = &ServiceErr{
+	errInternalServer = &ServiceErr{
 		Code:    "INTERNAL_SERVER_ERROR",
 		Message: "internal server error",
+	}
+
+	errBadRequest = &ServiceErr{
+		Code:    "BAD_REQUEST",
+		Message: "bad request",
 	}
 )

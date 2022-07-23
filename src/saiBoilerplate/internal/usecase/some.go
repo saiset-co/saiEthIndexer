@@ -25,3 +25,7 @@ func (uc *SomeUseCase) GetAll(ctx context.Context) ([]*entity.Some, error) {
 	}
 	return somes, nil
 }
+
+func (uc *SomeUseCase) Set(ctx context.Context, some *entity.Some) error {
+	return uc.repo.Set(ctx, some)
+}

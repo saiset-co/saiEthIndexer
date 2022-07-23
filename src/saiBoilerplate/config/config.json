@@ -9,8 +9,8 @@
         "Pass": "",
         "Host": "127.0.0.1",
         "Port": "27017",
-        "Database": "sai",
-        "Collection":"col"
+        "Database": "test",
+        "Collection":"test"
     },
     "SocketServer": {
         "Host": "0.0.0.0",

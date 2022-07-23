@@ -19,13 +19,21 @@ func NewRouter(handler *gin.Engine, l *zap.Logger, u *usecase.SomeUseCase) {
 	// middlewares (todo:mock auth service)
 	handler.Use(GinLogger(l), GinRecovery(l, true))
 
+	ucHandler := &someHandler{
+		uc:     u,
+		logger: l,
+	}
+
 	// Swagger
 	swaggerHandler := ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER_HTTP_HANDLER")
 	handler.GET("/swagger/*any", swaggerHandler)
 
 	// Routers
 	h := handler.Group("/v1")
+
 	{
-		h.GET("/get")
+		h.GET("/get", ucHandler.get)
+		h.POST("/post", ucHandler.set)
+
 	}
 }

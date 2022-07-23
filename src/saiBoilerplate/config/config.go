@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/tkanos/gonfig"
 )
@@ -44,11 +45,12 @@ type Configuration struct {
 
 func Load() Configuration {
 	var config Configuration
-	err := gonfig.GetConf("config.json", &config)
+
+	err := gonfig.GetConf("./saiBoilerplate/config/config.json", &config)
 
 	if err != nil {
 		fmt.Println("Configuration problem:", err)
-		panic(err)
+		log.Fatal(err)
 	}
 
 	return config

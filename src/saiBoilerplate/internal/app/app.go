@@ -26,7 +26,7 @@ func Run(cfg *config.Configuration) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	// todo:password ?
-	mongoClientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s", cfg.Storage.Host, cfg.Storage.Port))
+	mongoClientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s", cfg.Mongo.Host, cfg.Mongo.Port))
 
 	client, err := mongo.Connect(ctx, mongoClientOptions)
 	if err != nil {
@@ -44,7 +44,7 @@ func Run(cfg *config.Configuration) {
 		}
 	}()
 
-	mongoCollection := client.Database(cfg.Storage.Database).Collection(cfg.Storage.Collection)
+	mongoCollection := client.Database(cfg.Mongo.Database).Collection(cfg.Mongo.Collection)
 
 	someUseCase := usecase.New(
 		repo.New(mongoCollection),

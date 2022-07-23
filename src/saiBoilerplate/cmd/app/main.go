@@ -1,13 +1,18 @@
 package main
 
 import (
+	"log"
+
 	"github.com/webmakom-com/saiBoilerplate/config"
 	"github.com/webmakom-com/saiBoilerplate/server"
 )
 
 func main() {
 	// todo: cli app?
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 	srv := server.NewServer(cfg, false)
 
 	if cfg.SocketServer.Host != "" {

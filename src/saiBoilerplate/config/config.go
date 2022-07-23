@@ -2,56 +2,52 @@ package config
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/tkanos/gonfig"
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Configuration struct {
-	HttpServer struct {
-		Host string
-		Port string
-	}
-	Address struct {
-		Url string
-	}
-	SocketServer struct {
-		Host string
-		Port string
-	}
-	Token   string
-	Storage struct {
-		Atlas      bool
-		User       string
-		Pass       string
-		Host       string
-		Port       string
-		Database   string
-		Collection string
-	}
-	Operations []string
-	StartBlock int
-	WebSocket  struct {
-		Token string
-		Url   string
-	}
-	Contract struct {
-		Address string
-		ABI     string
-	}
-	Geth  []string
-	Sleep int
+	HttpServer   `yaml:"http_server"`
+	SocketServer `yaml:"socket_server"`
+	Token        string `yaml:"token"`
+	Mongo        `yaml:"mongo"`
+	WebSocket    `yaml:"web_socket"`
 }
 
-func Load() Configuration {
-	var config Configuration
+type HttpServer struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+}
 
-	err := gonfig.GetConf("./saiBoilerplate/config/config.json", &config)
+type SocketServer struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+}
 
+type Mongo struct {
+	Atlas      bool   `yaml:"atlas"`
+	User       string `yaml:"user"`
+	Pass       string `yaml:"pass"`
+	Host       string `yaml:"host"`
+	Port       string `yaml:"port"`
+	Database   string `yaml:"database"`
+	Collection string `yaml:"collection"`
+}
+
+type WebSocket struct {
+	Token string `yaml:"token"`
+	Url   string `yaml:"url"`
+}
+
+func Load() (Configuration, error) {
+	cfg := Configuration{}
+
+	err := cleanenv.ReadConfig("./config/config.yml", &cfg)
 	if err != nil {
-		fmt.Println("Configuration problem:", err)
-		log.Fatal(err)
+		return Configuration{}, fmt.Errorf("config error: %w", err)
 	}
 
-	return config
+	fmt.Printf("loaded configuration:%+v\n", cfg)
+
+	return cfg, nil
 }

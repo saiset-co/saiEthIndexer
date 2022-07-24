@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/webmakom-com/saiBoilerplate/config"
-	"github.com/webmakom-com/saiBoilerplate/server"
+	"github.com/webmakom-com/saiBoilerplate/internal/app"
 )
 
 func main() {
@@ -13,11 +13,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	srv := server.NewServer(cfg, false)
+	// srv := server.NewServer(cfg, false)
 
-	if cfg.SocketServer.Host != "" {
-		go srv.SocketStart()
-	}
+	// if cfg.SocketServer.Host != "" {
+	// 	go srv.SocketStart()
+	// }
 
-	srv.Start()
+	app.Run(&cfg)
+
+	//srv.Start()
 }

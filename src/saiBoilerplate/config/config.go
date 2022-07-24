@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -42,7 +44,13 @@ type WebSocket struct {
 func Load() (Configuration, error) {
 	cfg := Configuration{}
 
-	err := cleanenv.ReadConfig("./config/config.yml", &cfg)
+	path, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println(path)
+
+	err = cleanenv.ReadConfig("config/config.yaml", &cfg)
 	if err != nil {
 		return Configuration{}, fmt.Errorf("config error: %w", err)
 	}

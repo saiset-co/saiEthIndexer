@@ -50,7 +50,7 @@ func (h *someHandler) get(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, someResponse{somes})
+	c.IndentedJSON(http.StatusOK, someResponse{somes})
 }
 
 // @Summary     Simple set

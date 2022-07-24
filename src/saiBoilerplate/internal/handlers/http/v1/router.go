@@ -13,11 +13,10 @@ import (
 // @title       Go boilerplate microservice framework
 // @description Go boilerplate microservice framework
 // @version     1.0
-// @host        localhost:8080 (todo:dynamic host)
+// @host        localhost:8081 (todo:dynamic host)
 // @BasePath    /v1
 func NewRouter(handler *gin.Engine, l *zap.Logger, u *usecase.SomeUseCase) {
-	// middlewares (todo:mock auth service)
-	handler.Use(GinLogger(l), GinRecovery(l, true))
+	handler.Use(GinLogger(l), GinRecovery(l, false), AuthRequired(l))
 
 	ucHandler := &someHandler{
 		uc:     u,

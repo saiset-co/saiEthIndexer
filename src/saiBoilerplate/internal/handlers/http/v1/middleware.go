@@ -81,3 +81,10 @@ func GinRecovery(logger *zap.Logger, stack bool) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// todo:dummy auth middleware for now
+func AuthRequired(logger *zap.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+	}
+}

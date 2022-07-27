@@ -13,7 +13,7 @@ import (
 // @title       Go boilerplate microservice framework
 // @description Go boilerplate microservice framework
 // @version     1.0
-// @host        localhost:8081 (todo:dynamic host)
+// @host        localhost:8081
 // @BasePath    /v1
 func NewRouter(handler *gin.Engine, l *zap.Logger, u *usecase.SomeUseCase) {
 	handler.Use(GinLogger(l), GinRecovery(l, false), AuthRequired(l))
@@ -33,6 +33,7 @@ func NewRouter(handler *gin.Engine, l *zap.Logger, u *usecase.SomeUseCase) {
 	{
 		h.GET("/get", ucHandler.get)
 		h.POST("/post", ucHandler.set)
+		h.GET("/ws", ucHandler.websocket)
 
 	}
 }

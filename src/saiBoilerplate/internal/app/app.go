@@ -7,20 +7,20 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/webmakom-com/saiBoilerplate/config"
 	v1 "github.com/webmakom-com/saiBoilerplate/internal/handlers/http/v1"
+	"github.com/webmakom-com/saiBoilerplate/internal/handlers/socket"
 	"github.com/webmakom-com/saiBoilerplate/internal/usecase"
 	"github.com/webmakom-com/saiBoilerplate/internal/usecase/repo"
 	"github.com/webmakom-com/saiBoilerplate/pkg/httpserver"
-	"github.com/webmakom-com/saiBoilerplate/pkg/socketserver"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 )
 
+//todo: implement application struct? (embed logger,usecase)
 func Run(cfg *config.Configuration) {
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -28,8 +28,7 @@ func Run(cfg *config.Configuration) {
 	}
 
 	// mongo db repository
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx := context.Background()
 
 	mongoClientOptions := &options.ClientOptions{}
 	if cfg.Mongo.User != "" && cfg.Mongo.Pass != "" {
@@ -70,9 +69,9 @@ func Run(cfg *config.Configuration) {
 	httpServer := httpserver.New(handler, cfg)
 
 	// socket server
+	socketServer := socket.New(ctx, cfg, logger, someUseCase)
 
-	socketServer := socketserver.New(cfg, logger)
-	//go socket.Handle(socketServer.BufChannel)
+	websocket := websocket.New(cfg, logger, someUseCase)
 
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)

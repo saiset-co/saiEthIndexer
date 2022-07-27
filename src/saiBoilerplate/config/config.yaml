@@ -1,7 +1,6 @@
 http_server: 
         host: '127.0.0.1'
-        port: '8081'
-    
+        port: '8081'  
 mongo: 
         atlas: false
         user: ''
@@ -16,5 +15,5 @@ socket_server:
 token: '12345'
 web_socket": 
         token: ''
-        url: ''
+        url: '/ws'
 

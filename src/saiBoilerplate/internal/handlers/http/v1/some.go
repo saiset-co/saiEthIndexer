@@ -38,6 +38,7 @@ type setRequest struct {
 	Key string `json:"key" valid:",required"`
 }
 
+// Validation of incoming struct
 func (r *setRequest) validate() error {
 	_, err := valid.ValidateStruct(r)
 

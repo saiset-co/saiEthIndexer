@@ -12,15 +12,16 @@ import (
 	"github.com/webmakom-com/saiBoilerplate/config"
 	v1 "github.com/webmakom-com/saiBoilerplate/internal/handlers/http/v1"
 	"github.com/webmakom-com/saiBoilerplate/internal/handlers/socket"
+	"github.com/webmakom-com/saiBoilerplate/internal/handlers/websocket"
 	"github.com/webmakom-com/saiBoilerplate/internal/usecase"
 	"github.com/webmakom-com/saiBoilerplate/internal/usecase/repo"
 	"github.com/webmakom-com/saiBoilerplate/pkg/httpserver"
+	websocketserver "github.com/webmakom-com/saiBoilerplate/pkg/websocket"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 )
 
-//todo: implement application struct? (embed logger,usecase)
 func Run(cfg *config.Configuration) {
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -71,9 +72,11 @@ func Run(cfg *config.Configuration) {
 	// socket server
 	socketServer := socket.New(ctx, cfg, logger, someUseCase)
 
-	wsHandler := 
+	// websocket server
+	wsHandler := gin.New()
+	websocket.NewRouter(wsHandler, logger, someUseCase, cfg)
 
-	websocketServer := websocketServer.New()
+	websocketServer := websocketserver.New(wsHandler, cfg)
 
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)
@@ -86,6 +89,8 @@ func Run(cfg *config.Configuration) {
 		logger.Error("app - Run - httpServer.Notify: ", zap.Error(err))
 	case err = <-socketServer.Notify():
 		logger.Error("app - Run - socketServer.Notify: ", zap.Error(err))
+	case err = <-websocketServer.Notify():
+		logger.Error("app - Run - websocketServer.Notify: ", zap.Error(err))
 
 	}
 	err = httpServer.Shutdown()

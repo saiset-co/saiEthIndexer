@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// NewRouter -.
+// NewRouter
 // Swagger spec:
 // @title       Go boilerplate microservice framework
 // @description Go boilerplate microservice framework

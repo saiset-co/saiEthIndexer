@@ -1,4 +1,4 @@
-package websocketServer
+package websocketserver
 
 import (
 	"context"
@@ -15,13 +15,14 @@ const (
 	defaultShutdownTimeout = 3 * time.Second
 )
 
-// Server -.
+// Server struct
 type Server struct {
 	server          *http.Server
 	notify          chan error
 	shutdownTimeout time.Duration
 }
 
+// New returns new instance of http server for websocket
 func New(handler http.Handler, cfg *config.Configuration) *Server {
 	httpServer := &http.Server{
 		Handler:      handler,
@@ -48,12 +49,12 @@ func (s *Server) start() {
 	}()
 }
 
-// Notify -.
+// Notify
 func (s *Server) Notify() <-chan error {
 	return s.notify
 }
 
-// Shutdown -.
+// Shutdown
 func (s *Server) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 	defer cancel()

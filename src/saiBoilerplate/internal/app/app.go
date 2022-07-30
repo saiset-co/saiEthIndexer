@@ -71,7 +71,9 @@ func Run(cfg *config.Configuration) {
 	// socket server
 	socketServer := socket.New(ctx, cfg, logger, someUseCase)
 
-	websocket := websocket.New(cfg, logger, someUseCase)
+	wsHandler := 
+
+	websocketServer := websocketServer.New()
 
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)

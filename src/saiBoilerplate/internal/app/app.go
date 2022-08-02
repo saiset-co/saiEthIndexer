@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/webmakom-com/saiBoilerplate/config"
+	"github.com/webmakom-com/saiBoilerplate/internal/handlers"
 	v1 "github.com/webmakom-com/saiBoilerplate/internal/handlers/http/v1"
 	"github.com/webmakom-com/saiBoilerplate/internal/handlers/socket"
 	"github.com/webmakom-com/saiBoilerplate/internal/handlers/websocket"
@@ -22,61 +23,115 @@ import (
 	"go.uber.org/zap"
 )
 
-func Run(cfg *config.Configuration) {
+type App struct {
+	cfg      *config.Configuration
+	logger   *zap.Logger
+	repo     *repo.SomeRepo
+	uc       *usecase.SomeUseCase
+	handlers *handlers.Handler
+}
+
+func New() *App {
 	logger, err := zap.NewProduction()
 	if err != nil {
 		log.Fatalf("error when start logger : %s", err)
 	}
+	return &App{
+		logger: logger,
+	}
+}
 
-	// mongo db repository
+// Register config to app
+func (a *App) RegisterConfig() error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("config error: %w", err)
+	}
+
+	fmt.Printf("loaded configuration:%+v\n", cfg)
+
+	a.cfg = &cfg
+
+	return nil
+}
+
+// Register storage to app
+func (a *App) RegisterStorage() error {
 	ctx := context.Background()
 
+	// use mongodb as a storage
 	mongoClientOptions := &options.ClientOptions{}
-	if cfg.Mongo.User != "" && cfg.Mongo.Pass != "" {
-		mongoClientOptions = options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s", cfg.Mongo.Host, cfg.Mongo.Port)).SetAuth(options.Credential{
-			Username: cfg.Mongo.User,
-			Password: cfg.Mongo.Pass,
+	if a.cfg.Mongo.User != "" && a.cfg.Mongo.Pass != "" {
+		mongoClientOptions = options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s", a.cfg.Mongo.Host, a.cfg.Mongo.Port)).SetAuth(options.Credential{
+			Username: a.cfg.Mongo.User,
+			Password: a.cfg.Mongo.Pass,
 		})
 	} else {
-		mongoClientOptions = options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s", cfg.Mongo.Host, cfg.Mongo.Port))
+		mongoClientOptions = options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s", a.cfg.Mongo.Host, a.cfg.Mongo.Port))
 	}
 	client, err := mongo.Connect(ctx, mongoClientOptions)
 	if err != nil {
-		logger.Fatal("error when connect to mongo :", zap.Error(err))
+		a.logger.Fatal("error when connect to mongo :", zap.Error(err))
+		return err
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		logger.Fatal("error when ping mongo instance :", zap.Error(err))
+		a.logger.Fatal("error when ping mongo instance :", zap.Error(err))
+		return err
 	}
 
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
-			logger.Fatal("error when disconnect to mongo instance :", zap.Error(err))
+			a.logger.Fatal("error when disconnect to mongo instance :", zap.Error(err))
 		}
 	}()
-	mongoCollection := client.Database(cfg.Mongo.Database).Collection(cfg.Mongo.Collection)
+	mongoCollection := client.Database(a.cfg.Mongo.Database).Collection(a.cfg.Mongo.Collection)
 
-	logger.Info("found collection", zap.String("mongo collection", mongoCollection.Name()))
+	a.logger.Info("found collection", zap.String("mongo collection", mongoCollection.Name()))
 
-	someUseCase := usecase.New(
-		repo.New(mongoCollection),
-	)
+	repo := repo.New(mongoCollection)
 
-	//http server
-	handler := gin.New()
-	v1.NewRouter(handler, logger, someUseCase)
+	a.repo = repo
 
-	httpServer := httpserver.New(handler, cfg)
+	return nil
 
-	// socket server
-	socketServer := socket.New(ctx, cfg, logger, someUseCase)
+}
 
-	// websocket server
-	wsHandler := gin.New()
-	websocket.NewRouter(wsHandler, logger, someUseCase, cfg)
+// Register usecase (tasks) to app (main business logic)
+func (a *App) RegisterUsecase() {
+	someUseCase := usecase.New(a.repo)
+	a.uc = someUseCase
+}
 
-	websocketServer := websocketserver.New(wsHandler, cfg)
+// Register handlers to app
+func (a *App) RegisterHandlers() {
+	if a.cfg.Common.SocketServer.Enabled {
+		socketHandler := socket.New(context.Background(), a.cfg, a.logger, a.uc)
+		a.handlers.SocketHandler = socketHandler
+	}
+
+	if a.cfg.Common.HttpServer.Enabled {
+		//http server
+		handler := gin.New()
+		v1.NewRouter(handler, a.logger, a.uc)
+		a.handlers.HttpHandler = handler
+
+	}
+
+	if a.cfg.Common.WebSocket.Enabled {
+		// websocket server
+		wsHandler := gin.New()
+		websocket.NewRouter(wsHandler, a.logger, a.uc, a.cfg)
+		a.handlers.WsHandler = wsHandler
+	}
+}
+
+func (a *App) Run() {
+
+	httpServer := httpserver.New(a.handlers.HttpHandler, a.cfg)
+
+	websocketServer := websocketserver.New(a.handlers.WsHandler, a.cfg)
 
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)
@@ -84,17 +139,17 @@ func Run(cfg *config.Configuration) {
 
 	select {
 	case s := <-interrupt:
-		logger.Error("app - Run - signal: " + s.String())
-	case err = <-httpServer.Notify():
-		logger.Error("app - Run - httpServer.Notify: ", zap.Error(err))
-	case err = <-socketServer.Notify():
-		logger.Error("app - Run - socketServer.Notify: ", zap.Error(err))
-	case err = <-websocketServer.Notify():
-		logger.Error("app - Run - websocketServer.Notify: ", zap.Error(err))
+		a.logger.Error("app - Run - signal: " + s.String())
+	case err := <-httpServer.Notify():
+		a.logger.Error("app - Run - httpServer.Notify: ", zap.Error(err))
+	case err := <-a.handlers.SocketHandler.Notify():
+		a.logger.Error("app - Run - socketServer.Notify: ", zap.Error(err))
+	case err := <-websocketServer.Notify():
+		a.logger.Error("app - Run - websocketServer.Notify: ", zap.Error(err))
 
 	}
-	err = httpServer.Shutdown()
+	err := httpServer.Shutdown()
 	if err != nil {
-		logger.Error("app - Run - httpServer.Shutdown: ", zap.Error(err))
+		a.logger.Error("app - Run - httpServer.Shutdown: ", zap.Error(err))
 	}
 }

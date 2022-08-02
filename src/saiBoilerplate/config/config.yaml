@@ -1,19 +1,24 @@
-http_server: 
-        host: '127.0.0.1'
-        port: '8081'  
-mongo: 
-        atlas: false
-        user: ''
-        pass: ''
-        host: '127.0.0.1'
-        port: '27017'
-        database: 'test'
-        collection: 'test'  
-socket_server:
-        host: 'localhost'
-        port: '8082'
-token: '12345'
-web_socket": 
-        token: ''
-        url: '/ws'
+common:
+        http_server: 
+                enabled: true
+                host: '127.0.0.1'
+                port: '8081'   
+        socket_server:
+                enabled: true
+                host: 'localhost'
+                port: '8082'
+        web_socket": 
+                enabled: false
+                token: ''
+                url: '/ws'
 
+specific:
+        token: '12345'
+        mongo: 
+                atlas: false
+                user: ''
+                pass: ''
+                host: '127.0.0.1'
+                port: '27017'
+                database: 'test'
+                collection: 'test'  

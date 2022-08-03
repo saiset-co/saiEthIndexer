@@ -4,36 +4,18 @@ import (
 	"fmt"
 
 	"github.com/ilyakaznacheev/cleanenv"
+	configinternal "github.com/webmakom-com/saiBoilerplate/internal/config-internal"
 )
 
 type Configuration struct {
-	Common   `yaml:"common"`
+	Common   configinternal.Common `yaml:"common"` // built-in framework config
 	Specific `yaml:"specific"`
-}
-
-// Common - common settings for microservice (server options, socket port and etc)
-type Common struct {
-	HttpServer   `yaml:"http_server"`
-	SocketServer `yaml:"socket_server"`
-	WebSocket    `yaml:"web_socket"`
 }
 
 // Specific - specific for current microservice settings
 type Specific struct {
 	Mongo `yaml:"mongo"`
 	Token string `yaml:"token"`
-}
-
-type HttpServer struct {
-	Enabled bool   `yaml:"enabled"`
-	Host    string `yaml:"host"`
-	Port    string `yaml:"port"`
-}
-
-type SocketServer struct {
-	Enabled bool   `yaml:"enabled"`
-	Host    string `yaml:"host"`
-	Port    string `yaml:"port"`
 }
 
 type Mongo struct {
@@ -44,12 +26,6 @@ type Mongo struct {
 	Port       string `yaml:"port"`
 	Database   string `yaml:"database"`
 	Collection string `yaml:"collection"`
-}
-
-type WebSocket struct {
-	Enabled bool   `yaml:"enabled"`
-	Token   string `yaml:"token"`
-	Url     string `yaml:"url"`
 }
 
 func Load() (Configuration, error) {

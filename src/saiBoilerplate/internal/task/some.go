@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 
-	"github.com/webmakom-com/saiBoilerplate/internal/entity"
+	"github.com/webmakom-com/saiBoilerplate/internal/types"
 )
 
 // Example struct
@@ -18,7 +18,7 @@ func New(r SomeRepo) *SomeUseCase {
 	}
 }
 
-func (uc *SomeUseCase) GetAll(ctx context.Context) ([]*entity.Some, error) {
+func (uc *SomeUseCase) GetAll(ctx context.Context) ([]*types.Some, error) {
 	somes, err := uc.repo.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -26,6 +26,6 @@ func (uc *SomeUseCase) GetAll(ctx context.Context) ([]*entity.Some, error) {
 	return somes, nil
 }
 
-func (uc *SomeUseCase) Set(ctx context.Context, some *entity.Some) error {
+func (uc *SomeUseCase) Set(ctx context.Context, some *types.Some) error {
 	return uc.repo.Set(ctx, some)
 }

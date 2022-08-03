@@ -9,7 +9,7 @@ import (
 	valid "github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/webmakom-com/saiBoilerplate/internal/entity"
+	"github.com/webmakom-com/saiBoilerplate/internal/types"
 	"github.com/webmakom-com/saiBoilerplate/internal/usecase"
 	"go.uber.org/zap"
 )
@@ -31,7 +31,7 @@ type someHandler struct {
 }
 
 type someResponse struct {
-	Somes []*entity.Some `json:"Somes"`
+	Somes []*types.Some `json:"Somes"`
 }
 
 type setRequest struct {
@@ -126,7 +126,6 @@ func (h *someHandler) websocket(c *gin.Context) {
 	defer wsConn.Close()
 
 	for {
-		//todo:check message type
 		mt, b, err := wsConn.ReadMessage()
 		if err != nil || mt == websocket.CloseMessage {
 			h.logger.Error("http - v1 - ws - upgrade - read message", zap.Error(err))
@@ -162,7 +161,7 @@ func (h *someHandler) websocket(c *gin.Context) {
 				continue
 			}
 		case setMethod:
-			some := entity.Some{
+			some := types.Some{
 				Key: msg.Key,
 			}
 			err := h.uc.Set(c.Request.Context(), &some)

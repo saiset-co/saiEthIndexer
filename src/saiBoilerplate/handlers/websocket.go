@@ -1,4 +1,4 @@
-package websocket
+package handlers
 
 import (
 	"bytes"
@@ -9,15 +9,25 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/webmakom-com/saiBoilerplate/config"
-	"github.com/webmakom-com/saiBoilerplate/internal/entity"
-	"github.com/webmakom-com/saiBoilerplate/internal/usecase"
+	"github.com/webmakom-com/saiBoilerplate/tasks"
+	"github.com/webmakom-com/saiBoilerplate/types"
 	"go.uber.org/zap"
 )
 
-type someWSHandler struct {
-	uc     *usecase.SomeUseCase
+type WebsocketHandler struct {
+	task   *tasks.Task
 	logger *zap.Logger
 	cfg    *config.Configuration
+}
+
+func HandleWebsocket(g *gin.RouterGroup, t *tasks.Task, logger *zap.Logger) {
+	handler := &WebsocketHandler{
+		logger: logger,
+		task:   t,
+	}
+	{
+		g.GET("/ws", handler.handle)
+	}
 }
 
 // @Summary     Simple Get and Set through websocket
@@ -28,7 +38,7 @@ type someWSHandler struct {
 // @Produce     json
 // @Success     200 {object} someResponse
 // @Failure     500 {object} errInternalServerErr
-func (h *someWSHandler) handle(c *gin.Context) {
+func (h *WebsocketHandler) handle(c *gin.Context) {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -37,7 +47,7 @@ func (h *someWSHandler) handle(c *gin.Context) {
 			if token == "" {
 				return false
 			}
-			if token != h.cfg.WebSocket.Token {
+			if token != h.cfg.Common.WebSocket.Token {
 				return false
 			}
 			return true
@@ -61,7 +71,7 @@ func (h *someWSHandler) handle(c *gin.Context) {
 			h.logger.Info("socket connection was closed")
 			break
 		}
-		var msg socketMessage
+		var msg httpMessage
 		buf := bytes.NewBuffer(b)
 		err = json.Unmarshal(buf.Bytes(), &msg)
 		if err != nil {
@@ -70,7 +80,7 @@ func (h *someWSHandler) handle(c *gin.Context) {
 		}
 		switch msg.Method {
 		case getMethod:
-			somes, err := h.uc.GetAll(c.Request.Context())
+			somes, err := h.task.GetAll(c.Request.Context())
 			if err != nil {
 				h.logger.Error("websocket - get", zap.Error(err))
 				continue
@@ -86,10 +96,10 @@ func (h *someWSHandler) handle(c *gin.Context) {
 				continue
 			}
 		case setMethod:
-			some := entity.Some{
+			some := types.Some{
 				Key: msg.Key,
 			}
-			err := h.uc.Set(c.Request.Context(), &some)
+			err := h.task.Set(c.Request.Context(), &some)
 			if err != nil {
 				h.logger.Error("socket - socketStart - set", zap.Error(err))
 				continue

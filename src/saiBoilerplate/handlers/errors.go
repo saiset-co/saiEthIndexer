@@ -1,4 +1,4 @@
-package websocket
+package handlers
 
 type ServiceErr struct {
 	Code    string `json:"code" example:"ERROR_CODE"`

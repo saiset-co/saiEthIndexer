@@ -3,30 +3,30 @@ package repo
 import (
 	"context"
 
-	"github.com/webmakom-com/saiBoilerplate/internal/entity"
+	"github.com/webmakom-com/saiBoilerplate/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type SomeRepo struct {
-	col *mongo.Collection
+	Collection *mongo.Collection
 }
 
 func New(col *mongo.Collection) *SomeRepo {
-	return &SomeRepo{col: col}
+	return &SomeRepo{Collection: col}
 }
 
-func (r *SomeRepo) Set(ctx context.Context, entity *entity.Some) error {
+func (r *SomeRepo) Set(ctx context.Context, entity *types.Some) error {
 	entity.ID = primitive.NewObjectID()
-	_, err := r.col.InsertOne(ctx, entity)
+	_, err := r.Collection.InsertOne(ctx, entity)
 	return err
 }
 
-func (r *SomeRepo) GetAll(ctx context.Context) ([]*entity.Some, error) {
-	var result []*entity.Some
+func (r *SomeRepo) GetAll(ctx context.Context) ([]*types.Some, error) {
+	var result []*types.Some
 
-	cur, err := r.col.Find(ctx, bson.D{})
+	cur, err := r.Collection.Find(ctx, bson.D{})
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (r *SomeRepo) GetAll(ctx context.Context) ([]*entity.Some, error) {
 	defer cur.Close(ctx)
 
 	for cur.Next(ctx) {
-		var s entity.Some
+		var s types.Some
 		err := cur.Decode(&s)
 		if err != nil {
 			return result, err

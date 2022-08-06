@@ -1,9 +1,9 @@
-package usecase
+package tasks
 
 import (
 	"context"
 
-	"github.com/webmakom-com/saiBoilerplate/internal/types"
+	"github.com/webmakom-com/saiBoilerplate/types"
 )
 
 type (

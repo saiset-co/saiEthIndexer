@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"net"
 
 	"github.com/webmakom-com/saiBoilerplate/handlers"
 	"go.uber.org/zap"
@@ -16,16 +15,12 @@ const (
 	setMethod = "set"
 )
 
-func (s *Handler) socketStart(ctx context.Context) error {
+func (s *Server) socketStart(ctx context.Context) error {
 
-	ln, err := net.Listen("tcp", s.cfg.Common.SocketServer.Host+":"+s.cfg.Common.SocketServer.Port)
-	if err != nil {
-		return err
-	}
-	defer ln.Close()
+	defer s.listener.Close()
 newConn:
 	for {
-		conn, err := ln.Accept()
+		conn, err := s.listener.Accept()
 		if err != nil {
 			return err
 		}
@@ -40,8 +35,6 @@ newConn:
 				continue
 			}
 			s.logger.Info("socket - start - message", zap.String("message", string(b)))
-
-			//todo :insert socket handler here (simple func, mot method ???)
 
 			err = handlers.HandleSocket(ctx, conn, b, s.logger, s.task)
 			if err != nil {

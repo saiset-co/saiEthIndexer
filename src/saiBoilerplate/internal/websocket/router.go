@@ -25,7 +25,6 @@ func NewRouter(handler *gin.Engine, l *zap.Logger, t *tasks.Task) {
 	handler.GET("/swagger/*any", swaggerHandler)
 
 	// Routers
-	g := handler.Group("/v1")
 
-	handlers.HandleWebsocket(g, t, l)
+	handlers.HandleWebsocket(handler, t, l)
 }

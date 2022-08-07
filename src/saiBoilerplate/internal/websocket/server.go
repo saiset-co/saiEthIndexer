@@ -23,7 +23,7 @@ type Server struct {
 }
 
 // New returns new instance of http server for websocket
-func New(handler http.Handler, cfg *config.Configuration) *Server {
+func New(handler http.Handler, cfg *config.Configuration, errChan chan error) *Server {
 	httpServer := &http.Server{
 		Handler:      handler,
 		ReadTimeout:  defaultReadTimeout,
@@ -33,7 +33,7 @@ func New(handler http.Handler, cfg *config.Configuration) *Server {
 
 	s := &Server{
 		server:          httpServer,
-		notify:          make(chan error, 1),
+		notify:          errChan,
 		shutdownTimeout: defaultShutdownTimeout,
 	}
 
@@ -45,7 +45,6 @@ func New(handler http.Handler, cfg *config.Configuration) *Server {
 func (s *Server) start() {
 	go func() {
 		s.notify <- s.server.ListenAndServe()
-		close(s.notify)
 	}()
 }
 

@@ -20,13 +20,13 @@ type WebsocketHandler struct {
 	cfg    *config.Configuration
 }
 
-func HandleWebsocket(g *gin.RouterGroup, t *tasks.Task, logger *zap.Logger) {
+func HandleWebsocket(g *gin.Engine, t *tasks.Task, logger *zap.Logger) {
 	handler := &WebsocketHandler{
 		logger: logger,
 		task:   t,
 	}
 	{
-		g.GET("/ws", handler.handle)
+		g.GET("/", handler.handle)
 	}
 }
 
@@ -43,13 +43,13 @@ func (h *WebsocketHandler) handle(c *gin.Context) {
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
-			token := r.Header.Get("token")
-			if token == "" {
-				return false
-			}
-			if token != h.cfg.Common.WebSocket.Token {
-				return false
-			}
+			// token := r.Header.Get("token")
+			// if token == "" {
+			// 	return false
+			// }
+			// if token != h.cfg.Common.WebSocket.Token {
+			// 	return false
+			// }
 			return true
 		},
 	}
@@ -65,12 +65,9 @@ func (h *WebsocketHandler) handle(c *gin.Context) {
 		msgType, b, err := connection.ReadMessage()
 		if err != nil || msgType == websocket.CloseMessage {
 			h.logger.Error("websocket - read message", zap.Error(err))
-			continue
-		}
-		if msgType == websocket.CloseMessage {
-			h.logger.Info("socket connection was closed")
 			break
 		}
+
 		var msg httpMessage
 		buf := bytes.NewBuffer(b)
 		err = json.Unmarshal(buf.Bytes(), &msg)

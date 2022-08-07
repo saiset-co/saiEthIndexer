@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/webmakom-com/saiBoilerplate/internal/app"
@@ -14,16 +15,22 @@ func main() {
 	app := app.New()
 
 	//register config with specific options
-	err := app.RegisterConfig("../../config.config.yaml")
+	err := app.RegisterConfig("./config/config.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// get storage instance (mongodb collection here)
-	storage, err := storage.GetStorageInstance(context.Background(), app.Cfg)
+	storage, client, err := storage.GetStorageInstance(context.Background(), app.Cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer func() {
+		if err = client.Disconnect(context.Background()); err != nil {
+			fmt.Printf("error when disconnect to mongo instance : %s", err.Error())
+		}
+	}()
 
 	// register storage in app
 	err = app.RegisterStorage(storage)

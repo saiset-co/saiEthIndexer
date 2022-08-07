@@ -49,7 +49,7 @@ func (a *App) RegisterConfig(path string) error {
 	}
 
 	a.Cfg = &cfg
-
+	fmt.Printf("%+v\n", a.Cfg) // debug
 	return nil
 }
 
@@ -65,16 +65,17 @@ func (a *App) RegisterStorage(storage *storage.Storage) error {
 // Register task to app (main business logic)
 func (a *App) RegisterTask(task *tasks.Task) {
 	a.task = task
+	return
 }
 
 // Register handlers to app
 func (a *App) RegisterHandlers() {
-
+	multihandler := handlers.Handlers{}
 	if a.Cfg.Common.HttpServer.Enabled {
 		//http server
 		handler := gin.New()
 		http.NewRouter(handler, a.logger, a.task)
-		a.handlers.Http = handler
+		multihandler.Http = handler
 
 	}
 
@@ -82,18 +83,35 @@ func (a *App) RegisterHandlers() {
 		// websocket server
 		wsHandler := gin.New()
 		websocket.NewRouter(wsHandler, a.logger, a.task)
-		a.handlers.Websocket = wsHandler
+		multihandler.Websocket = wsHandler
 	}
+
+	a.handlers = &multihandler
 }
 
-func (a *App) Run() {
-	var socketHandler = &socket.Handler{}
+func (a *App) Run() error {
+	errChan := make(chan error, 1)
+	var (
+		socketServer    = &socket.Server{}
+		httpServer      = &http.HttpServer{}
+		websocketServer = &websocket.Server{}
+		err             error
+	)
 	if a.Cfg.Common.SocketServer.Enabled {
-		socketHandler = socket.New(context.Background(), a.Cfg, a.logger, a.task)
-	}
-	httpServer := http.New(a.handlers.Http, a.Cfg)
+		socketServer, err = socket.New(context.Background(), a.Cfg, a.logger, a.task, errChan)
+		if err != nil {
+			return err
+		}
 
-	websocketServer := websocket.New(a.handlers.Websocket, a.Cfg)
+	}
+
+	if a.Cfg.Common.HttpServer.Enabled {
+		httpServer = http.New(a.handlers.Http, a.Cfg, errChan)
+	}
+
+	if a.Cfg.Common.WebSocket.Enabled {
+		websocketServer = websocket.New(a.handlers.Websocket, a.Cfg, errChan)
+	}
 
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)
@@ -102,16 +120,33 @@ func (a *App) Run() {
 	select {
 	case s := <-interrupt:
 		a.logger.Error("app - Run - signal: " + s.String())
-	case err := <-httpServer.Notify():
-		a.logger.Error("app - Run - httpServer.Notify: ", zap.Error(err))
-	case err := <-socketHandler.Notify():
-		a.logger.Error("app - Run - socketServer.Notify: ", zap.Error(err))
-	case err := <-websocketServer.Notify():
-		a.logger.Error("app - Run - websocketServer.Notify: ", zap.Error(err))
+	case err := <-errChan:
+		a.logger.Error("app - Run - server notifier: ", zap.Error(err))
+	}
+	if a.Cfg.Common.SocketServer.Enabled {
+		err := socketServer.Shutdown()
+		if err != nil {
+			a.logger.Error("app - Run - socketServer.Shutdown: ", zap.Error(err))
+			return err
+		}
+		a.logger.Info("socket server shutdown")
+	}
+	if a.Cfg.Common.HttpServer.Enabled {
+		err := httpServer.Shutdown()
+		if err != nil {
+			a.logger.Error("app - Run - httpServer.Shutdown: ", zap.Error(err))
+			return err
+		}
+		a.logger.Info("http server shutdown")
+	}
 
+	if a.Cfg.Common.WebSocket.Enabled {
+		err = websocketServer.Shutdown()
+		if err != nil {
+			a.logger.Error("app - Run - websocketServer.Shutdown: ", zap.Error(err))
+		}
+		a.logger.Info("websocket server shutdown")
 	}
-	err := httpServer.Shutdown()
-	if err != nil {
-		a.logger.Error("app - Run - httpServer.Shutdown: ", zap.Error(err))
-	}
+
+	return nil
 }

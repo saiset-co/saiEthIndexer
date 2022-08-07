@@ -13,7 +13,7 @@ type Storage struct {
 	Collection *mongo.Collection
 }
 
-func GetStorageInstance(ctx context.Context, cfg *config.Configuration) (*Storage, error) {
+func GetStorageInstance(ctx context.Context, cfg *config.Configuration) (*Storage, *mongo.Client, error) {
 
 	// use mongodb as a storage
 	mongoClientOptions := &options.ClientOptions{}
@@ -27,25 +27,21 @@ func GetStorageInstance(ctx context.Context, cfg *config.Configuration) (*Storag
 	}
 	client, err := mongo.Connect(ctx, mongoClientOptions)
 	if err != nil {
-		return nil, fmt.Errorf("error when connect to mongo : %w", err)
+		return nil, nil, fmt.Errorf("error when connect to mongo : %w", err)
 
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error when ping mongo instance : %w", err)
+		return nil, nil, fmt.Errorf("error when ping mongo instance : %w", err)
 
 	}
-	defer func() {
-		if err = client.Disconnect(ctx); err != nil {
-			fmt.Printf("error when disconnect to mongo instance : %s", err.Error())
-		}
-	}()
+
 	mongoCollection := client.Database(cfg.Mongo.Database).Collection(cfg.Mongo.Collection)
 
 	fmt.Printf("found collection : %s", mongoCollection.Name())
 
 	return &Storage{
 		Collection: mongoCollection,
-	}, nil
+	}, client, nil
 }

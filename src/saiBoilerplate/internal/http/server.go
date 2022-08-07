@@ -16,14 +16,14 @@ const (
 )
 
 // Server
-type Server struct {
+type HttpServer struct {
 	server          *http.Server
 	notify          chan error
 	shutdownTimeout time.Duration
 }
 
 // New returns new instance of http server
-func New(handler http.Handler, cfg *config.Configuration) *Server {
+func New(handler http.Handler, cfg *config.Configuration, errChan chan error) *HttpServer {
 	httpServer := &http.Server{
 		Handler:      handler,
 		ReadTimeout:  defaultReadTimeout,
@@ -31,9 +31,9 @@ func New(handler http.Handler, cfg *config.Configuration) *Server {
 		Addr:         cfg.Common.HttpServer.Host + ":" + cfg.Common.HttpServer.Port,
 	}
 
-	s := &Server{
+	s := &HttpServer{
 		server:          httpServer,
-		notify:          make(chan error, 1),
+		notify:          errChan,
 		shutdownTimeout: defaultShutdownTimeout,
 	}
 
@@ -42,20 +42,19 @@ func New(handler http.Handler, cfg *config.Configuration) *Server {
 	return s
 }
 
-func (s *Server) start() {
+func (s *HttpServer) start() {
 	go func() {
 		s.notify <- s.server.ListenAndServe()
-		close(s.notify)
 	}()
 }
 
 // Notify
-func (s *Server) Notify() <-chan error {
+func (s *HttpServer) Notify() <-chan error {
 	return s.notify
 }
 
 // Shutdown
-func (s *Server) Shutdown() error {
+func (s *HttpServer) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 	defer cancel()
 

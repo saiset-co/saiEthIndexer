@@ -7,10 +7,10 @@ common:
                 enabled: true
                 host: 'localhost'
                 port: '8082'
-        web_socket": 
-                enabled: false
-                token: ''
-                url: '/ws'
+        web_socket: 
+                enabled: true
+                token: '1'
+                url: 'localhost:8820'
 
 specific:
         token: '12345'

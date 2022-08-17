@@ -29,7 +29,7 @@ func New(handler http.Handler, cfg *config.Configuration) *Server {
 		Handler:      handler,
 		ReadTimeout:  defaultReadTimeout,
 		WriteTimeout: defaultWriteTimeout,
-		Addr:         cfg.HttpServer.Host + ":" + cfg.HttpServer.Port,
+		Addr:         cfg.Common.HttpServer.Host + ":" + cfg.Common.HttpServer.Port,
 	}
 
 	s := &Server{

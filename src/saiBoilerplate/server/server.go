@@ -31,14 +31,14 @@ var socketMessage SocketMessage
 func NewServer(c config.Configuration, w bool) Server {
 	return Server{
 		Config:    c,
-		Host:      c.HttpServer.Host,
-		Port:      c.HttpServer.Port,
+		Host:      c.Common.HttpServer.Host,
+		Port:      c.Common.HttpServer.Port,
 		Websocket: w,
 	}
 }
 
 func (s Server) SocketStart() {
-	ln, _ := net.Listen("tcp", s.Config.SocketServer.Port)
+	ln, _ := net.Listen("tcp", s.Config.Common.SocketServer.Port)
 	conn, _ := ln.Accept()
 
 	for {

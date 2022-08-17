@@ -9,7 +9,7 @@ func main() {
 	cfg := config.Load()
 	srv := server.NewServer(cfg, false)
 
-	if cfg.SocketServer.Host != "" {
+	if cfg.Common.SocketServer.Host != "" {
 		go srv.SocketStart()
 	}
 

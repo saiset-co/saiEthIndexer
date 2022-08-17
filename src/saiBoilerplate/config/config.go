@@ -1,6 +1,9 @@
 package config
 
 import (
+	"fmt"
+
+	"github.com/tkanos/gonfig"
 	configinternal "github.com/webmakom-com/saiBoilerplate/internal/config-internal"
 )
 
@@ -23,4 +26,16 @@ type Mongo struct {
 	Port       string `yaml:"port"`
 	Database   string `yaml:"database"`
 	Collection string `yaml:"collection"`
+}
+
+func Load() Configuration {
+	var config Configuration
+	err := gonfig.GetConf("config.json", &config)
+
+	if err != nil {
+		fmt.Println("Configuration problem:", err)
+		panic(err)
+	}
+
+	return config
 }

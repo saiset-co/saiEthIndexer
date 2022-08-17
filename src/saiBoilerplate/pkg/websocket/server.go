@@ -28,7 +28,7 @@ func New(handler http.Handler, cfg *config.Configuration) *Server {
 		Handler:      handler,
 		ReadTimeout:  defaultReadTimeout,
 		WriteTimeout: defaultWriteTimeout,
-		Addr:         cfg.WebSocket.Url,
+		Addr:         cfg.Common.WebSocket.Url,
 	}
 
 	s := &Server{

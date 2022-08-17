@@ -18,7 +18,7 @@ func NewWebSocketManager(c config.Configuration) Manager {
 }
 
 func (w Manager) SendMessage(message string, token string) {
-	url := w.Config.WebSocket.Url + "?method=broadcast&message=" + token + "|" + message
+	url := w.Config.Common.WebSocket.Url + "?method=broadcast&message=" + token + "|" + message
 	req, err := http.NewRequest("GET", url, new(bytes.Buffer))
 
 	if err != nil {

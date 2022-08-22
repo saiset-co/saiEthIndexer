@@ -17,6 +17,7 @@ type Specific struct {
 	Contracts  []Contract `json:"contracts"`
 	StartBlock int        `json:"start_block"`
 	Operations []string   `json:"operations"`
+	Sleep      int        `json:"sleep"`
 }
 
 // settings for saiStorage

@@ -3,6 +3,7 @@ package tasks
 import (
 	"encoding/json"
 	"os"
+	"time"
 
 	"github.com/onrik/ethrpc"
 	"github.com/webmakom-com/saiBoilerplate/config"
@@ -75,6 +76,9 @@ func (t *TaskManager) ProcessBlocks() {
 
 			t.BlockManager.HandleTransactions(blkInfo.Transactions)
 		}
+		blk.ID = blockID
+		t.BlockManager.SetLastBlock(blk)
+		time.Sleep(time.Duration(t.Config.Specific.Sleep) * time.Second)
 
 	}
 }

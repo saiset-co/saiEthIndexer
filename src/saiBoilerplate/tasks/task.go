@@ -27,11 +27,10 @@ func NewManager(config *config.Configuration) (*TaskManager, error) {
 		return nil, err
 	}
 
-	// todo:handle error
-	ethClient, _ := eth.GetClient(config.Specific.GethServer)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	ethClient, err := eth.GetClient(config.Specific.GethServer, logger)
+	if err != nil {
+		return nil, err
+	}
 
 	blockManager := NewBlockManager(*config, logger)
 

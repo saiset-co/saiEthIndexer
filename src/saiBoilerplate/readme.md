@@ -7,6 +7,4 @@
     http - boilerplate code for http server
     socket - the same as above for socket
     websocket - the same for websocket
-5. storage - get instance of storage client we will work with
 6. tasks - main busyness logic
-7. types - models we will use in our microservice

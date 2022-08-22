@@ -12,6 +12,7 @@ import (
 	"github.com/webmakom-com/saiBoilerplate/config"
 	"github.com/webmakom-com/saiBoilerplate/handlers"
 	"github.com/webmakom-com/saiBoilerplate/internal/http"
+	"github.com/webmakom-com/saiBoilerplate/pkg/httpserver"
 	"github.com/webmakom-com/saiBoilerplate/tasks"
 	"go.uber.org/zap"
 )
@@ -74,10 +75,10 @@ func (a *App) RegisterHandlers() {
 func (a *App) Run() error {
 	errChan := make(chan error, 1)
 	var (
-		httpServer = &http.HttpServer{}
+		httpServer = &httpserver.Server{}
 	)
 	if a.Cfg.Common.HttpServer.Enabled {
-		httpServer = http.New(a.handlers.Http, a.Cfg, errChan)
+		httpServer = httpserver.New(a.handlers.Http, a.Cfg)
 	}
 
 	// Waiting signal

@@ -9,16 +9,14 @@ import (
 	"github.com/onrik/ethrpc"
 	"github.com/webmakom-com/saiBoilerplate/config"
 	"github.com/webmakom-com/saiBoilerplate/utils/saiStorageUtil"
-	"github.com/webmakom-com/saiBoilerplate/websocket"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
 )
 
 type BlockManager struct {
-	config    *config.Configuration
-	storage   saiStorageUtil.Database
-	websocket websocket.Manager
-	logger    *zap.Logger
+	config  *config.Configuration
+	storage saiStorageUtil.Database
+	logger  *zap.Logger
 }
 
 type Block struct {
@@ -28,10 +26,9 @@ type Block struct {
 func NewBlockManager(c config.Configuration, logger *zap.Logger) *BlockManager {
 
 	manager := &BlockManager{
-		config:    &c,
-		storage:   saiStorageUtil.Storage(c.Specific.Storage.URL, c.Storage.Email, c.Storage.Password),
-		websocket: websocket.NewWebSocketManager(c),
-		logger:    logger,
+		config:  &c,
+		storage: saiStorageUtil.Storage(c.Specific.Storage.URL, c.Storage.Email, c.Storage.Password),
+		logger:  logger,
 	}
 
 	return manager

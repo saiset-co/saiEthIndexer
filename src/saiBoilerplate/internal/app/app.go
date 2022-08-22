@@ -81,6 +81,8 @@ func (a *App) Run() error {
 		httpServer = httpserver.New(a.handlers.Http, a.Cfg)
 	}
 
+	go a.taskManager.ProcessBlocks()
+
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)

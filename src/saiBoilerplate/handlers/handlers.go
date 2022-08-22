@@ -5,6 +5,5 @@ import (
 )
 
 type Handlers struct {
-	Http      *gin.Engine
-	Websocket *gin.Engine
+	Http *gin.Engine
 }

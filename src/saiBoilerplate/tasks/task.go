@@ -80,7 +80,6 @@ func (t *TaskManager) ProcessBlocks() {
 }
 
 func (t *TaskManager) AddContract(contracts []config.Contract) error {
-	t.Logger.Info("4")
 	t.Config.Specific.Contracts = append(t.Config.Specific.Contracts, contracts...)
 
 	for _, contract := range t.Config.Specific.Contracts {

@@ -1,41 +1,40 @@
 package config
 
 import (
-	"fmt"
-
-	"github.com/tkanos/gonfig"
+	valid "github.com/asaskevich/govalidator"
 	configinternal "github.com/webmakom-com/saiBoilerplate/internal/config-internal"
 )
 
 type Configuration struct {
-	Common   configinternal.Common `yaml:"common"` // built-in framework config
-	Specific `yaml:"specific"`
+	Common   configinternal.Common `json:"common"` // built-in framework config
+	Specific `json:"specific"`
 }
 
 // Specific - specific for current microservice settings
 type Specific struct {
-	Mongo `yaml:"mongo"`
-	Token string `yaml:"token"`
+	GethServer string `json:"geth_server"`
+	Storage    `json:"storage"`
+	Contracts  []Contract `json:"contracts"`
+	StartBlock int        `json:"start_block"`
+	Operations []string   `json:"operations"`
 }
 
-type Mongo struct {
-	Atlas      bool   `yaml:"atlas"`
-	User       string `yaml:"user"`
-	Pass       string `yaml:"pass"`
-	Host       string `yaml:"host"`
-	Port       string `yaml:"port"`
-	Database   string `yaml:"database"`
-	Collection string `yaml:"collection"`
+// settings for saiStorage
+type Storage struct {
+	Token    string `json:"token"`
+	URL      string `json:"url"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-func Load() Configuration {
-	var config Configuration
-	err := gonfig.GetConf("config.json", &config)
+type Contract struct {
+	Address    string `json:"address" valid:",required"`
+	ABI        string `json:"abi" valid:",required"`
+	StartBlock int    `json:"start_block" valid:",required"`
+}
 
-	if err != nil {
-		fmt.Println("Configuration problem:", err)
-		panic(err)
-	}
+func (r *Contract) Validate() error {
+	_, err := valid.ValidateStruct(r)
 
-	return config
+	return err
 }

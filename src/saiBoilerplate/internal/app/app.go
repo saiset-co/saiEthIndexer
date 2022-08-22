@@ -1,7 +1,7 @@
 package app
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -9,24 +9,18 @@ import (
 	"syscall"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/webmakom-com/saiBoilerplate/config"
 	"github.com/webmakom-com/saiBoilerplate/handlers"
 	"github.com/webmakom-com/saiBoilerplate/internal/http"
-	"github.com/webmakom-com/saiBoilerplate/internal/socket"
-	"github.com/webmakom-com/saiBoilerplate/internal/websocket"
-	"github.com/webmakom-com/saiBoilerplate/storage"
 	"github.com/webmakom-com/saiBoilerplate/tasks"
-	"github.com/webmakom-com/saiBoilerplate/tasks/repo"
 	"go.uber.org/zap"
 )
 
 type App struct {
-	Cfg      *config.Configuration
-	logger   *zap.Logger
-	task     *tasks.Task
-	repo     *repo.SomeRepo
-	handlers *handlers.Handlers
+	Cfg         *config.Configuration
+	logger      *zap.Logger
+	handlers    *handlers.Handlers
+	taskManager *tasks.TaskManager
 }
 
 func New() *App {
@@ -43,28 +37,23 @@ func New() *App {
 func (a *App) RegisterConfig(path string) error {
 	cfg := config.Configuration{}
 
-	err := cleanenv.ReadConfig(path, &cfg)
+	b, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("config error: %w", err)
+		return fmt.Errorf("config read error: %w", err)
+	}
+	err = json.Unmarshal(b, &cfg)
+	if err != nil {
+		return fmt.Errorf("config unmarshal error: %w", err)
 	}
 
 	a.Cfg = &cfg
-	fmt.Printf("%+v\n", a.Cfg) // debug
+	fmt.Printf("start config :%+v\n", a.Cfg) // debug
 	return nil
-}
-
-// Register storage to app
-func (a *App) RegisterStorage(storage *storage.Storage) error {
-	a.repo = &repo.SomeRepo{
-		Collection: storage.Collection,
-	}
-	return nil
-
 }
 
 // Register task to app (main business logic)
-func (a *App) RegisterTask(task *tasks.Task) {
-	a.task = task
+func (a *App) RegisterTask(task *tasks.TaskManager) {
+	a.taskManager = task
 	return
 }
 
@@ -74,16 +63,9 @@ func (a *App) RegisterHandlers() {
 	if a.Cfg.Common.HttpServer.Enabled {
 		//http server
 		handler := gin.New()
-		http.NewRouter(handler, a.logger, a.task)
+		http.NewRouter(handler, a.logger, a.taskManager)
 		multihandler.Http = handler
 
-	}
-
-	if a.Cfg.Common.WebSocket.Enabled {
-		// websocket server
-		wsHandler := gin.New()
-		websocket.NewRouter(wsHandler, a.logger, a.task)
-		multihandler.Websocket = wsHandler
 	}
 
 	a.handlers = &multihandler
@@ -92,25 +74,10 @@ func (a *App) RegisterHandlers() {
 func (a *App) Run() error {
 	errChan := make(chan error, 1)
 	var (
-		socketServer    = &socket.Server{}
-		httpServer      = &http.HttpServer{}
-		websocketServer = &websocket.Server{}
-		err             error
+		httpServer = &http.HttpServer{}
 	)
-	if a.Cfg.Common.SocketServer.Enabled {
-		socketServer, err = socket.New(context.Background(), a.Cfg, a.logger, a.task, errChan)
-		if err != nil {
-			return err
-		}
-
-	}
-
 	if a.Cfg.Common.HttpServer.Enabled {
 		httpServer = http.New(a.handlers.Http, a.Cfg, errChan)
-	}
-
-	if a.Cfg.Common.WebSocket.Enabled {
-		websocketServer = websocket.New(a.handlers.Websocket, a.Cfg, errChan)
 	}
 
 	// Waiting signal
@@ -123,14 +90,6 @@ func (a *App) Run() error {
 	case err := <-errChan:
 		a.logger.Error("app - Run - server notifier: ", zap.Error(err))
 	}
-	if a.Cfg.Common.SocketServer.Enabled {
-		err := socketServer.Shutdown()
-		if err != nil {
-			a.logger.Error("app - Run - socketServer.Shutdown: ", zap.Error(err))
-			return err
-		}
-		a.logger.Info("socket server shutdown")
-	}
 	if a.Cfg.Common.HttpServer.Enabled {
 		err := httpServer.Shutdown()
 		if err != nil {
@@ -138,14 +97,6 @@ func (a *App) Run() error {
 			return err
 		}
 		a.logger.Info("http server shutdown")
-	}
-
-	if a.Cfg.Common.WebSocket.Enabled {
-		err = websocketServer.Shutdown()
-		if err != nil {
-			a.logger.Error("app - Run - websocketServer.Shutdown: ", zap.Error(err))
-		}
-		a.logger.Info("websocket server shutdown")
 	}
 
 	return nil

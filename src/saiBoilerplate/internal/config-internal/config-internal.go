@@ -2,25 +2,25 @@ package configinternal
 
 // Common - common settings for microservice (server options, socket port and etc)
 type Common struct {
-	HttpServer   `yaml:"http_server"`
-	SocketServer `yaml:"socket_server"`
-	WebSocket    `yaml:"web_socket"`
+	HttpServer   `json:"http_server"`
+	SocketServer `json:"socket_server"`
+	WebSocket    `json:"web_socket"`
 }
 
 type WebSocket struct {
-	Enabled bool   `yaml:"enabled"`
-	Token   string `yaml:"token"`
-	Url     string `yaml:"url"`
+	Enabled bool   `json:"enabled"`
+	Token   string `json:"token"`
+	Url     string `json:"url"`
 }
 
 type HttpServer struct {
-	Enabled bool   `yaml:"enabled"`
-	Host    string `yaml:"host"`
-	Port    string `yaml:"port"`
+	Enabled bool   `json:"enabled"`
+	Host    string `json:"host"`
+	Port    string `json:"port"`
 }
 
 type SocketServer struct {
-	Enabled bool   `yaml:"enabled"`
-	Host    string `yaml:"host"`
-	Port    string `yaml:"port"`
+	Enabled bool   `json:"enabled"`
+	Host    string `json:"host"`
+	Port    string `json:"port"`
 }

@@ -1,74 +1,44 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	valid "github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
+	"github.com/webmakom-com/saiBoilerplate/config"
 	"github.com/webmakom-com/saiBoilerplate/tasks"
-	"github.com/webmakom-com/saiBoilerplate/types"
 	"go.uber.org/zap"
 )
 
-type httpMessage struct {
-	Method string `json:"method"`
-	Token  string `json:"token"`
-	Key    string `json:"key"`
-}
-
 type HttpHandler struct {
-	Logger *zap.Logger
-	Task   *tasks.Task
+	Logger      *zap.Logger
+	TaskManager *tasks.TaskManager
 }
 
-type someResponse struct {
-	Somes []*types.Some `json:"Somes"`
+type addContractsRequest struct {
+	Contracts []config.Contract `json:"contracts" valid:",required"`
 }
 
-type setRequest struct {
-	Key string `json:"key" valid:",required"`
-}
-
-// Validation of incoming struct
-func (r *setRequest) validate() error {
+// Validation of contracts struct
+func (r *addContractsRequest) validate() error {
 	_, err := valid.ValidateStruct(r)
 
 	return err
 }
 
-type setResponse struct {
-	Created bool `json:"created" example:"true"`
+type addContractResponse struct {
+	Created bool `json:"is_added" example:"true"`
 }
 
-func HandleHTTP(g *gin.RouterGroup, t *tasks.Task, logger *zap.Logger) {
+func HandleHTTP(g *gin.RouterGroup, logger *zap.Logger, t *tasks.TaskManager) {
 	handler := &HttpHandler{
-		Logger: logger,
-		Task:   t,
+		Logger:      logger,
+		TaskManager: t,
 	}
 	{
-		g.GET("/get", handler.get)
-		g.POST("/post", handler.set)
+		g.POST("/add_contract", handler.addContract)
 	}
-}
-
-// @Summary     Simple Get
-// @Description Simple Get
-// @ID          Simple Get
-// @Tags  	    some
-// @Accept      json
-// @Produce     json
-// @Success     200 {object} someResponse
-// @Failure     500 {object} errInternalServerErr
-// @Router      /get [get]
-func (h *HttpHandler) get(c *gin.Context) {
-	somes, err := h.Task.GetAll(c.Request.Context())
-	if err != nil {
-		h.Logger.Error("http - v1 - get", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, errInternalServer)
-		return
-	}
-
-	c.IndentedJSON(http.StatusOK, someResponse{somes})
 }
 
 // @Summary     Simple set
@@ -80,24 +50,30 @@ func (h *HttpHandler) get(c *gin.Context) {
 // @Success     200 {object} setResponse
 // @Failure     500 {object} errInternalServer
 // @Failure     400 {object} errBadRequest
-// @Router      /set [post]
-func (h *HttpHandler) set(c *gin.Context) {
-	dto := &setRequest{}
-	err := c.ShouldBindJSON(dto)
+// @Router      /add_contract [post]
+func (h *HttpHandler) addContract(c *gin.Context) {
+	dto := addContractsRequest{}
+	err := c.ShouldBindJSON(&dto)
 	if err != nil {
-		h.Logger.Error("http - v1 - set - bind", zap.Error(err))
+		h.Logger.Error("http  - add contract - bind", zap.Error(err))
 		c.JSON(http.StatusBadRequest, errBadRequest)
 	}
-	some := &types.Some{
-		Key: dto.Key,
-	}
+	fmt.Println(dto)
 
-	err = h.Task.Set(c.Request.Context(), some)
+	for _, contract := range dto.Contracts {
+		err = contract.Validate()
+		if err != nil {
+			h.Logger.Error("http  - add contract - validate", zap.Error(err))
+			c.JSON(http.StatusBadRequest, errBadRequest)
+			return
+		}
+	}
+	err = h.TaskManager.AddContract(dto.Contracts)
 	if err != nil {
 		h.Logger.Error("http - v1 - set - repo", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, errInternalServer)
 		return
 	}
 
-	c.JSON(http.StatusOK, &setResponse{Created: true})
+	c.JSON(http.StatusOK, &addContractResponse{Created: true})
 }

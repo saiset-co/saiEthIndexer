@@ -15,6 +15,7 @@ func (bm *BlockManager) SendWebSocketMsg(txMsg []byte, commandName string) error
 		bm.logger.Error("tasks - SendWebSocketMg - dial with websocket server", zap.Error(err))
 		return err
 	}
+	defer conn.Close()
 	msg := []byte(bm.config.Common.WebSocket.Token + "|" + commandName + "-" + string(txMsg))
 	err = conn.WriteMessage(websocket.TextMessage, msg)
 	if err != nil {

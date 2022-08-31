@@ -35,7 +35,7 @@ func New() *App {
 }
 
 // Register config to app
-func (a *App) RegisterConfig(path string) error {
+func (a *App) RegisterConfig(path string, contractsPath string) error {
 	cfg := config.Configuration{}
 
 	b, err := os.ReadFile(path)
@@ -47,6 +47,17 @@ func (a *App) RegisterConfig(path string) error {
 		return fmt.Errorf("config unmarshal error: %w", err)
 	}
 
+	contracts := config.EthContracts{}
+	b, err = os.ReadFile(contractsPath)
+	if err != nil {
+		return fmt.Errorf("contracts json read error: %w", err)
+	}
+	err = json.Unmarshal(b, &contracts)
+	if err != nil {
+		return fmt.Errorf("contracts json unmarshal error: %w", err)
+	}
+
+	cfg.EthContracts = contracts
 	a.Cfg = &cfg
 	fmt.Printf("start config :%+v\n", a.Cfg) // debug
 	return nil
@@ -81,7 +92,8 @@ func (a *App) Run() error {
 		httpServer = httpserver.New(a.handlers.Http, a.Cfg)
 	}
 
-	go a.taskManager.ProcessBlocks()
+	// todo: uncomment, handle panic????
+	//go a.taskManager.ProcessBlocks()
 
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)

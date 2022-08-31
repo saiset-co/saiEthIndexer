@@ -1,6 +1,8 @@
 package config
 
 import (
+	"sync"
+
 	valid "github.com/asaskevich/govalidator"
 	configinternal "github.com/webmakom-com/saiBoilerplate/internal/config-internal"
 )
@@ -8,16 +10,16 @@ import (
 type Configuration struct {
 	Common   configinternal.Common `json:"common"` // built-in framework config
 	Specific `json:"specific"`
+	EthContracts
 }
 
 // Specific - specific for current microservice settings
 type Specific struct {
 	GethServer string `json:"geth_server"`
 	Storage    `json:"storage"`
-	Contracts  []Contract `json:"contracts"`
-	StartBlock int        `json:"start_block"`
-	Operations []string   `json:"operations"`
-	Sleep      int        `json:"sleep"`
+	StartBlock int      `json:"start_block"`
+	Operations []string `json:"operations"`
+	Sleep      int      `json:"sleep"`
 }
 
 // settings for saiStorage
@@ -36,6 +38,10 @@ type Contract struct {
 
 func (r *Contract) Validate() error {
 	_, err := valid.ValidateStruct(r)
-
 	return err
+}
+
+type EthContracts struct {
+	Mutex     *sync.RWMutex
+	Contracts []Contract `json:"contracts"`
 }

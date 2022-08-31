@@ -11,7 +11,7 @@ func main() {
 	app := app.New()
 
 	//register config with specific options
-	err := app.RegisterConfig("./config/config.json")
+	err := app.RegisterConfig("./config/config.json", "./config/contracts.json")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"time"
 
@@ -12,7 +13,8 @@ import (
 )
 
 const (
-	configPath = "./config/config.json"
+	configPath    = "./config/config.json"
+	contractsPath = "./config/contracts.json"
 )
 
 type TaskManager struct {
@@ -28,7 +30,8 @@ func NewManager(config *config.Configuration) (*TaskManager, error) {
 		return nil, err
 	}
 
-	ethClient, err := eth.GetClient(config.Specific.GethServer, logger)
+	// todo:handle error
+	ethClient, _ := eth.GetClient(config.Specific.GethServer, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -84,20 +87,22 @@ func (t *TaskManager) ProcessBlocks() {
 }
 
 func (t *TaskManager) AddContract(contracts []config.Contract) error {
-	t.Config.Specific.Contracts = append(t.Config.Specific.Contracts, contracts...)
+	t.Config.EthContracts.Mutex.Lock()
+	defer t.Config.EthContracts.Mutex.Unlock()
+	t.Config.EthContracts.Contracts = append(t.Config.EthContracts.Contracts, contracts...)
 
-	for _, contract := range t.Config.Specific.Contracts {
+	for _, contract := range t.Config.EthContracts.Contracts {
 		if contract.StartBlock < t.Config.StartBlock {
 			t.Config.StartBlock = contract.StartBlock
 		}
 	}
 
-	data, err := json.MarshalIndent(t.Config, "", "	")
+	data, err := json.MarshalIndent(&t.Config.EthContracts, "", "	")
 	if err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(configPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	f, err := os.OpenFile(contractsPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
 		return err
 	}
@@ -117,7 +122,7 @@ func (t *TaskManager) AddContract(contracts []config.Contract) error {
 		return err
 	}
 
-	err = t.ReloadConfig()
+	err = t.ReloadContracts()
 	if err != nil {
 		return err
 	}
@@ -128,19 +133,18 @@ func (t *TaskManager) AddContract(contracts []config.Contract) error {
 }
 
 // reload config after contracts was added via http add_contracts endpoint
-func (t *TaskManager) ReloadConfig() error {
-	cfg := config.Configuration{}
-
-	b, err := os.ReadFile(configPath)
+func (t *TaskManager) ReloadContracts() error {
+	contracts := config.EthContracts{}
+	b, err := os.ReadFile(contractsPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("contracts json read error: %w", err)
 	}
-	err = json.Unmarshal(b, &cfg)
+	err = json.Unmarshal(b, &contracts)
 	if err != nil {
-		return err
+		return fmt.Errorf("contracts json unmarshal error: %w", err)
 	}
 
-	t.Config = &cfg
-	t.BlockManager.config = &cfg
+	t.Config.EthContracts = contracts
+	t.BlockManager.config.EthContracts = contracts
 	return nil
 }

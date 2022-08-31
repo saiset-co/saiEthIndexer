@@ -100,8 +100,8 @@ func (bm *BlockManager) SetLastBlock(blk *Block) error {
 
 func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction) {
 	for j := 0; j < len(trs); j++ {
-		for i := 0; i < len(bm.config.Specific.Contracts); i++ {
-			if strings.ToLower(trs[j].From) != strings.ToLower(bm.config.Contracts[i].Address) && strings.ToLower(trs[j].To) != strings.ToLower(bm.config.Contracts[i].Address) {
+		for i := 0; i < len(bm.config.EthContracts.Contracts); i++ {
+			if strings.ToLower(trs[j].From) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) && strings.ToLower(trs[j].To) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) {
 				continue
 			}
 
@@ -125,9 +125,9 @@ func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction) {
 				continue
 			}
 
-			abi, err := abi.JSON(strings.NewReader(bm.config.Specific.Contracts[i].ABI))
+			abi, err := abi.JSON(strings.NewReader(bm.config.EthContracts.Contracts[i].ABI))
 			if err != nil {
-				bm.logger.Error("block manager - handle transaction - parse abi from config", zap.String("address", bm.config.Contracts[i].Address), zap.Error(err))
+				bm.logger.Error("block manager - handle transaction - parse abi from config", zap.String("address", bm.config.EthContracts.Contracts[i].Address), zap.Error(err))
 				continue
 			}
 

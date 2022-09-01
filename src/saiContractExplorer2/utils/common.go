@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/json"
 	"reflect"
+
+	"github.com/webmakom-com/saiBoilerplate/config"
 )
 
 func InArray(val interface{}, array interface{}) (index int) {
@@ -22,4 +24,12 @@ func InArray(val interface{}, array interface{}) (index int) {
 func ConvertInterfaceToJson(obj interface{}) []byte {
 	jsonResult, _ := json.Marshal(obj)
 	return jsonResult
+}
+
+func RemoveContract(slice []config.Contract, s int) []config.Contract {
+	return append(slice[:s], slice[s+1:]...)
+}
+
+func RemoveAddress(slice []string, s int) []string {
+	return append(slice[:s], slice[s+1:]...)
 }

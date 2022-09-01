@@ -42,6 +42,6 @@ func (r *Contract) Validate() error {
 }
 
 type EthContracts struct {
-	Mutex     *sync.RWMutex
-	Contracts []Contract `json:"contracts"`
+	Mutex     *sync.RWMutex `json:"-"`
+	Contracts []Contract    `json:"contracts"`
 }

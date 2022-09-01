@@ -1,5 +1,4 @@
 {
-	"Mutex": {},
 	"contracts": [
 		{
 			"address": "test",
@@ -10,21 +9,6 @@
 			"address": "0x9fe3Ace9629468AB8858660f765d329273D94D6D",
 			"abi": "324234",
 			"start_block": 123
-		},
-		{
-			"address": "2",
-			"abi": "324234",
-			"start_block": 123
-		},
-		{
-			"address": "2",
-			"abi": "324234",
-			"start_block": 123
-		},
-		{
-			"address": "3",
-			"abi": "tes222222t",
-			"start_block": 34
 		}
 	]
 }

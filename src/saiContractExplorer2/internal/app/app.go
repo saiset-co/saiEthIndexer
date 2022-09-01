@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/gin-gonic/gin"
@@ -56,8 +57,8 @@ func (a *App) RegisterConfig(path string, contractsPath string) error {
 	if err != nil {
 		return fmt.Errorf("contracts json unmarshal error: %w", err)
 	}
-
 	cfg.EthContracts = contracts
+	cfg.EthContracts.Mutex = new(sync.RWMutex)
 	a.Cfg = &cfg
 	fmt.Printf("start config :%+v\n", a.Cfg) // debug
 	return nil

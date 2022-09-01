@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/onrik/ethrpc"
 	"github.com/webmakom-com/saiBoilerplate/config"
 	"github.com/webmakom-com/saiBoilerplate/pkg/eth"
+	"github.com/webmakom-com/saiBoilerplate/utils"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +24,7 @@ type TaskManager struct {
 	EthClient    *ethrpc.EthRPC
 	Logger       *zap.Logger
 	BlockManager *BlockManager
+	resultChan   chan error
 }
 
 func NewManager(config *config.Configuration) (*TaskManager, error) {
@@ -43,6 +46,7 @@ func NewManager(config *config.Configuration) (*TaskManager, error) {
 		EthClient:    ethClient,
 		Logger:       logger,
 		BlockManager: blockManager,
+		resultChan:   make(chan error),
 	}, nil
 }
 
@@ -97,39 +101,63 @@ func (t *TaskManager) AddContract(contracts []config.Contract) error {
 		}
 	}
 
-	data, err := json.MarshalIndent(&t.Config.EthContracts, "", "	")
+	go t.RewriteContractsConfig(contractsPath)
+
+	err := <-t.resultChan
 	if err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(contractsPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	return nil
+}
+
+func (t *TaskManager) RewriteContractsConfig(contractsConfigPath string) {
+	data, err := json.MarshalIndent(&t.Config.EthContracts, "", "	")
 	if err != nil {
-		return err
+		t.Logger.Error("task - addContract - rewrite contracts config - marshal contracts", zap.Error(err))
+		t.resultChan <- err
+		return
+	}
+
+	f, err := os.OpenFile(contractsPath, os.O_RDWR|os.O_TRUNC, 0755)
+	if err != nil {
+		t.Logger.Error("task - addContract - rewrite contracts config - open contract config file", zap.Error(err))
+		t.resultChan <- err
+		return
 	}
 
 	err = f.Truncate(0)
 	if err != nil {
-		return err
+		t.Logger.Error("task - addContract - rewrite contracts config - truncate", zap.Error(err))
+		t.resultChan <- err
+		return
 	}
 
 	_, err = f.Seek(0, 0)
 	if err != nil {
-		return err
+		t.Logger.Error("task - addContract - rewrite contracts config - seek", zap.Error(err))
+		t.resultChan <- err
+		return
 	}
 
 	_, err = f.Write(data)
 	if err != nil {
-		return err
+		t.Logger.Error("task - addContract - rewrite contracts config - write", zap.Error(err))
+		t.resultChan <- err
+		return
 	}
 
 	err = t.ReloadContracts()
 	if err != nil {
-		return err
+		t.Logger.Error("task - addContract - rewrite contracts config - reload contract", zap.Error(err))
+		t.resultChan <- err
+		return
 	}
 
-	t.Logger.Sugar().Infof("active config : %+v\n", t.Config)
+	t.resultChan <- nil
 
-	return nil
+	t.Logger.Sugar().Infof("active config : %+v\n", t.Config)
+	return
 }
 
 // reload config after contracts was added via http add_contracts endpoint
@@ -145,6 +173,39 @@ func (t *TaskManager) ReloadContracts() error {
 	}
 
 	t.Config.EthContracts = contracts
+	t.Config.EthContracts.Mutex = new(sync.RWMutex)
 	t.BlockManager.config.EthContracts = contracts
+	t.BlockManager.config.EthContracts.Mutex = new(sync.RWMutex)
+	return nil
+}
+
+func (t *TaskManager) DeleteContract(contracts []string) error {
+	t.Config.EthContracts.Mutex.Lock()
+	defer t.Config.EthContracts.Mutex.Unlock()
+	var notFoundAddresses []string
+
+LOOP:
+	for _, incomingAddress := range contracts {
+		for i, existingContract := range t.Config.EthContracts.Contracts {
+			t.Logger.Sugar().Infof("address : %s, index : %d", existingContract.Address, i)
+			if incomingAddress == existingContract.Address {
+				t.Config.EthContracts.Contracts = utils.RemoveContract(t.Config.EthContracts.Contracts, i)
+				continue LOOP
+			}
+		}
+		notFoundAddresses = append(notFoundAddresses, incomingAddress)
+	}
+
+	if len(notFoundAddresses) != 0 {
+		t.Logger.Info("Not found addresses to delete", zap.Strings("addresses", notFoundAddresses), zap.Int("len", len(notFoundAddresses)))
+	}
+
+	go t.RewriteContractsConfig(contractsPath)
+
+	err := <-t.resultChan
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

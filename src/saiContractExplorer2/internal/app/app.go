@@ -93,8 +93,7 @@ func (a *App) Run() error {
 		httpServer = httpserver.New(a.handlers.Http, a.Cfg)
 	}
 
-	// todo: uncomment, handle panic????
-	//go a.taskManager.ProcessBlocks()
+	go a.taskManager.ProcessBlocks()
 
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)

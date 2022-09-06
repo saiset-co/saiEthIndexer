@@ -9,10 +9,7 @@ build:
 	make docker
 
 service:
-	cd ./src/saiEthManager && go build -o ../../microservices/saiEthManager/build/sai-eth-manager
-	cd ./src/saiGNMonitor && go build -o ../../microservices/saiGNMonitor/build/sai-gn-monitor
-	cp ./src/saiEthManager/config/config.json ./microservices/saiEthManager/build/config.json
-	cp ./src/saiGNMonitor/config/config.json ./microservices/saiGNMonitor/build/config.json
+	cd ./src/saiEthManager && go build -o ../../microservices/saiEthIndexer/build/sai-eth-indexer
 
 docker:
 	docker-compose -f ./microservices/docker-compose.yml up -d --build

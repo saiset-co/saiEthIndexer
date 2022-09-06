@@ -1,9 +1,9 @@
 version: '3'
 services:
 
-  sai-contract-explorer2:
+  sai-eth-indexer:
     build:
-      context: ./sai-contract-explorer2
+      context: ./sai-eth-indexer
       dockerfile: Dockerfile
     ports:
       - "8817:8080"

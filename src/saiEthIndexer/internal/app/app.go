@@ -20,19 +20,32 @@ import (
 
 type App struct {
 	Cfg         *config.Configuration
-	logger      *zap.Logger
+	Logger      *zap.Logger
 	handlers    *handlers.Handlers
 	taskManager *tasks.TaskManager
 }
 
-func New() *App {
-	logger, err := zap.NewProduction()
+func New(args []string) (*App, error) {
+	var (
+		logger *zap.Logger
+		err    error
+	)
+	if len(args) <= 1 || args[1] != "--debug" {
+		logger, err = zap.NewProduction()
+	} else {
+		logger, err = zap.NewDevelopment(zap.AddStacktrace(zap.DPanicLevel))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Debug("running logger in debug mode")
 	if err != nil {
 		log.Fatalf("error when start logger : %s", err)
 	}
 	return &App{
-		logger: logger,
-	}
+		Logger: logger,
+	}, nil
 }
 
 // Register config to app
@@ -60,7 +73,7 @@ func (a *App) RegisterConfig(path string, contractsPath string) error {
 	cfg.EthContracts = contracts
 	cfg.EthContracts.Mutex = new(sync.RWMutex)
 	a.Cfg = &cfg
-	fmt.Printf("start config :%+v\n", a.Cfg) // debug
+	a.Logger.Sugar().Debugf("start config :%+v\n", a.Cfg) // debug
 	return nil
 }
 
@@ -76,7 +89,7 @@ func (a *App) RegisterHandlers() {
 	if a.Cfg.Common.HttpServer.Enabled {
 		//http server
 		handler := gin.New()
-		http.NewRouter(handler, a.logger, a.taskManager)
+		http.NewRouter(handler, a.Logger, a.taskManager)
 		multihandler.Http = handler
 
 	}
@@ -101,17 +114,17 @@ func (a *App) Run() error {
 
 	select {
 	case s := <-interrupt:
-		a.logger.Error("app - Run - signal: " + s.String())
+		a.Logger.Error("app - Run - signal: " + s.String())
 	case err := <-errChan:
-		a.logger.Error("app - Run - server notifier: ", zap.Error(err))
+		a.Logger.Error("app - Run - server notifier: ", zap.Error(err))
 	}
 	if a.Cfg.Common.HttpServer.Enabled {
 		err := httpServer.Shutdown()
 		if err != nil {
-			a.logger.Error("app - Run - httpServer.Shutdown: ", zap.Error(err))
+			a.Logger.Error("app - Run - httpServer.Shutdown: ", zap.Error(err))
 			return err
 		}
-		a.logger.Info("http server shutdown")
+		a.Logger.Info("http server shutdown")
 	}
 
 	return nil

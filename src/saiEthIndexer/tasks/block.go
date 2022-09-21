@@ -95,6 +95,7 @@ func (bm *BlockManager) SetLastBlock(blk *Block) error {
 			return err
 		}
 	}
+	bm.logger.Sugar().Debugf("block %d was saved to storage", blk.ID)
 	return nil
 }
 

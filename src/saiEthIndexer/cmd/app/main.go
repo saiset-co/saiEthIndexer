@@ -2,21 +2,27 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/saiset-co/saiEthIndexer/internal/app"
 	"github.com/saiset-co/saiEthIndexer/tasks"
 )
 
 func main() {
-	app := app.New()
+	args := os.Args
 
-	//register config with specific options
-	err := app.RegisterConfig("./config/config.json", "./config/contracts.json")
+	app, err := app.New(args)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	t, err := tasks.NewManager(app.Cfg)
+	//register config with specific options
+	err = app.RegisterConfig("./config/config.json", "./config/contracts.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	t, err := tasks.NewManager(app.Cfg, app.Logger)
 	if err != nil {
 		log.Fatal(err)
 	}

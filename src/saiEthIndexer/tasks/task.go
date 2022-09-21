@@ -27,12 +27,7 @@ type TaskManager struct {
 	resultChan   chan error
 }
 
-func NewManager(config *config.Configuration) (*TaskManager, error) {
-	logger, err := zap.NewProduction()
-	if err != nil {
-		return nil, err
-	}
-
+func NewManager(config *config.Configuration, logger *zap.Logger) (*TaskManager, error) {
 	ethClient, err := eth.GetClient(config.Specific.GethServer, logger)
 	if err != nil {
 		return nil, err
@@ -59,11 +54,14 @@ func (t *TaskManager) ProcessBlocks() {
 			continue
 		}
 
+		t.Logger.Sugar().Debugf("get most recent block from geth-server : %d", blockID)
+
 		blk, err := t.BlockManager.GetLastBlock(blockID)
 		if err != nil {
-			t.Logger.Error("tasks - ProcessBlocks - get last block from block manager", zap.Error(err))
 			continue
 		}
+
+		t.Logger.Sugar().Debugf("get most recent block from storage : %d", blockID)
 
 		for i := blk.ID; i <= blockID; i++ {
 			blkInfo, err := t.EthClient.EthGetBlockByNumber(i, true)
@@ -78,12 +76,13 @@ func (t *TaskManager) ProcessBlocks() {
 				continue
 			}
 
-			t.Logger.Info("tasks - ProcessBlocks - transactions found", zap.Int("block id", i), zap.Int("transactions count", len(blkInfo.Transactions)))
+			t.Logger.Sugar().Debugf("block %d from %d analyzed, %d total transactions", blk.ID, blockID, len(blkInfo.Transactions))
 
 			t.BlockManager.HandleTransactions(blkInfo.Transactions)
 		}
 		blk.ID = blockID
 		t.BlockManager.SetLastBlock(blk)
+
 		time.Sleep(time.Duration(t.Config.Specific.Sleep) * time.Second)
 
 	}
@@ -106,6 +105,7 @@ func (t *TaskManager) AddContract(contracts []config.Contract) error {
 	if err != nil {
 		return err
 	}
+	t.Logger.Sugar().Debugf("contracts")
 
 	return nil
 }

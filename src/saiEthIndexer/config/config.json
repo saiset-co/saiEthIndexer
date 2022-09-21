@@ -17,10 +17,10 @@
 		}
 	},
 	"specific": {
-		"geth_server": "http://geth-dev.sator.io:8545",
+		"geth_server": "https://rpc.ankr.com/bsc_testnet_chapel",
 		"storage": {
 			"token": "12345",
-			"url": "http://sai-storage:8818",
+			"url": "http://127.0.0.1:27017",
 			"email": "admin@saistorage.com",
 			"password": "1234"
 		},

@@ -9,7 +9,7 @@ build:
 	make docker
 
 service:
-	cd ./src/saiEthManager && go build -o ../../microservices/saiEthIndexer/build/sai-eth-indexer
+	cd ./src/saiEthIndexer/cmd/app && go build -o ../../../../microservices/saiEthIndexer/build/sai-eth-indexer
 
 docker:
 	docker-compose -f ./microservices/docker-compose.yml up -d --build

@@ -17,14 +17,14 @@
 		}
 	},
 	"specific": {
-		"geth_server": "http://geth-dev.sator.io:8545",
+		"geth_server": "",
 		"storage": {
-			"token": "12345",
-			"url": "http://sai-storage:8818",
-			"email": "admin@saistorage.com",
-			"password": "1234"
+			"token": "",
+			"url": "",
+			"email": "",
+			"password": ""
 		},
-		"start_block": 34,
+		"start_block": 0,
 		"operations": ["registerAddress","transferTo"],
 		"sleep":20
 	}

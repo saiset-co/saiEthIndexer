@@ -8,12 +8,21 @@ import (
 func GetClient(address string, logger *zap.Logger) (*ethrpc.EthRPC, error) {
 	ethClient := ethrpc.New(address)
 
-	version, err := ethClient.Web3ClientVersion()
+	// got -32000 context cancelled error when get web3clientVersion
+
+	// version, err := ethClient.Web3ClientVersion()
+	// if err != nil {
+	// 	logger.Error("get version", zap.Error(err))
+	// 	return nil, err
+	// }
+
+	version, err := ethClient.NetVersion()
 	if err != nil {
+		logger.Error("get net version", zap.Error(err))
 		return nil, err
 	}
 
-	logger.Info("Connected to geth server", zap.String("client version", version))
+	logger.Sugar().Debugf("Connected to geth server  : %s,  client net version : %s", ethClient.URL(), version)
 
 	return ethClient, nil
 }

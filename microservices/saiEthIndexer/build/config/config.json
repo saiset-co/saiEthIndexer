@@ -19,10 +19,10 @@
 	"specific": {
 		"geth_server": "http://geth...com:8545",
 		"storage": {
-			"token": "12345",
-			"url": "http://localhost:8801",
-			"email": "admin@saistorage.com",
-			"password": "123"
+			"token": "",
+			"url": "",
+			"email": "",
+			"password": ""
 		},
 		"start_block": 34,
 		"operations": ["registerAddress","transferTo"],

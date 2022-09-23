@@ -1,26 +1,37 @@
 package tasks
 
 import (
+	"bytes"
 	"net/http"
 
-	"github.com/gorilla/websocket"
-	"go.uber.org/zap"
+	"github.com/saiset-co/saiEthIndexer/config"
 )
 
-func (bm *BlockManager) SendWebSocketMsg(txMsg []byte, commandName string) error {
-	header := make(http.Header)
-	header.Add("Origin", bm.config.Common.HttpServer.Host)
-	conn, _, err := websocket.DefaultDialer.Dial(bm.config.Common.WebSocket.Url, header)
+type WebsocketManager struct {
+	Config config.Configuration
+}
+
+func NewWebSocketManager(c config.Configuration) *WebsocketManager {
+	return &WebsocketManager{
+		Config: c,
+	}
+}
+
+func (w WebsocketManager) SendMessage(message string, token string) error {
+	url := w.Config.Specific.WebSocket.URL + "?method=broadcast&message=" + token + "|" + message
+	req, err := http.NewRequest("GET", url, new(bytes.Buffer))
 	if err != nil {
-		bm.logger.Error("tasks - SendWebSocketMg - dial with websocket server", zap.Error(err))
 		return err
 	}
-	defer conn.Close()
-	msg := []byte(bm.config.Common.WebSocket.Token + "|" + commandName + "-" + string(txMsg))
-	err = conn.WriteMessage(websocket.TextMessage, msg)
+
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	_, err = client.Do(req)
+
 	if err != nil {
-		bm.logger.Error("tasks - SendWebSocketMg - write message to websocket server", zap.Error(err))
 		return err
 	}
+
+	client.CloseIdleConnections()
 	return nil
 }

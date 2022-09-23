@@ -76,7 +76,7 @@ func (t *TaskManager) ProcessBlocks() {
 				continue
 			}
 
-			t.Logger.Sugar().Debugf("block %d from %d analyzed, %d total transactions", blk.ID, blockID, len(blkInfo.Transactions))
+			t.Logger.Sugar().Debugf("block %d from %d analyzed, %d total transactions", i, blockID, len(blkInfo.Transactions))
 
 			t.BlockManager.HandleTransactions(blkInfo.Transactions)
 		}

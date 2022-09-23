@@ -20,12 +20,17 @@
 		"geth_server": "https://rpc.ankr.com/bsc_testnet_chapel",
 		"storage": {
 			"token": "12345",
-			"url": "http://127.0.0.1:27017",
-			"email": "11111.com",
-			"password": "1234"
+			"url": "http://localhost:8801",
+			"email": "admin@saistorage.com",
+			"password": "123"
 		},
 		"start_block": 34,
 		"operations": ["registerAddress","transferTo"],
-		"sleep":20
+		"sleep":20,
+		"websocket": {
+			"token": "hv",
+			"url": "http://sai-websocket:8820"
+		}
 	}
+	
 }

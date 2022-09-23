@@ -3,6 +3,10 @@ package tasks
 import (
 	"encoding/hex"
 	"encoding/json"
+	"io/ioutil"
+	"log"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -13,10 +17,13 @@ import (
 	"go.uber.org/zap"
 )
 
+var startBlock int
+
 type BlockManager struct {
-	config  *config.Configuration
-	storage saiStorageUtil.Database
-	logger  *zap.Logger
+	config    *config.Configuration
+	storage   saiStorageUtil.Database
+	logger    *zap.Logger
+	websocket *WebsocketManager
 }
 
 type Block struct {
@@ -26,75 +33,61 @@ type Block struct {
 func NewBlockManager(c config.Configuration, logger *zap.Logger) *BlockManager {
 
 	manager := &BlockManager{
-		config:  &c,
-		storage: saiStorageUtil.Storage(c.Specific.Storage.URL, c.Storage.Email, c.Storage.Password),
-		logger:  logger,
+		config:    &c,
+		storage:   saiStorageUtil.Storage(c.Specific.Storage.URL, c.Storage.Email, c.Storage.Password),
+		logger:    logger,
+		websocket: NewWebSocketManager(c),
 	}
 
 	return manager
 }
 
 func (bm *BlockManager) GetLastBlock(id int) (*Block, error) {
-	var blocks []Block
-	err, resultJsonString := bm.storage.Get("last_block", bson.M{}, bson.M{}, bm.config.Storage.Token)
-
+	block := Block{ID: id}
+	pwd, err := os.Getwd()
 	if err != nil {
-		bm.logger.Error("tasks - BlockManager - get last block - get last_block from storage", zap.Error(err))
-		return &Block{
-			ID: id,
-		}, nil
+		bm.logger.Error("tasks - BlockManager - get currect directory", zap.Error(err))
+		return &block, nil
 	}
 
-	err = json.Unmarshal(resultJsonString, &blocks)
-
+	data, err := ioutil.ReadFile(pwd + "/block.data")
 	if err != nil {
-		bm.logger.Error("tasks - BlockManager - get last block - unmarshal result of get last_block", zap.Error(err))
-		return &Block{
-			ID: id,
-		}, nil
+		bm.logger.Error("tasks - BlockManager - read file", zap.Error(err))
+		return &block, nil
 	}
 
-	var startBlock int
-	if len(blocks) > 0 {
-		startBlock = blocks[0].ID + 1
+	lastBlock, strErr := strconv.Atoi(string(data))
+
+	if strErr != nil {
+		log.Println("Data from file can't be converted to int:", err)
+		return &block, nil
+	}
+
+	if lastBlock > 0 {
+		startBlock = lastBlock + 1
 	} else if bm.config.StartBlock > 0 {
 		startBlock = bm.config.StartBlock
 	} else {
 		startBlock = id
 	}
 
-	return &Block{
-		ID: startBlock,
-	}, nil
+	return &Block{ID: startBlock}, nil
 }
 
 func (bm *BlockManager) SetLastBlock(blk *Block) error {
-	var blocks []Block
+	pwd, err := os.Getwd()
 
-	err, resultJsonString := bm.storage.Get("last_block", bson.M{}, bson.M{}, bm.config.Storage.Token)
 	if err != nil {
-		bm.logger.Error("tasks - BlockManager - set last block - get last_block from storage", zap.Error(err))
-		return err
-	}
-	err = json.Unmarshal(resultJsonString, &blocks)
-	if err != nil {
-		bm.logger.Error("tasks - BlockManager - set last block - unmarshal result of get last_block", zap.Error(err))
+		bm.logger.Error("tasks - BlockManager - set last block - read currect directory", zap.Error(err))
 		return err
 	}
 
-	if len(blocks) > 0 {
-		err, _ = bm.storage.Update("last_block", bson.M{"id": bson.M{"$exists": true}}, blk, bm.config.Storage.Token)
-		if err != nil {
-			bm.logger.Error("tasks - BlockManager - set last block - update storage last_block", zap.Error(err))
-			return err
-		}
-	} else {
-		err, _ = bm.storage.Put("last_block", blk, bm.config.Storage.Token)
-		if err != nil {
-			bm.logger.Error("tasks - BlockManager - set last block - unmarshal result of get last_block", zap.Error(err))
-			return err
-		}
+	lastBlock := strconv.Itoa(blk.ID)
+	err = ioutil.WriteFile(pwd+"/block.data", []byte(lastBlock), 0777)
+	if err != nil {
+		bm.logger.Error("tasks - BlockManager - set last block - write to file", zap.Error(err))
 	}
+
 	bm.logger.Sugar().Debugf("block %d was saved to storage", blk.ID)
 	return nil
 }
@@ -102,7 +95,7 @@ func (bm *BlockManager) SetLastBlock(blk *Block) error {
 func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction) {
 	for j := 0; j < len(trs); j++ {
 		for i := 0; i < len(bm.config.EthContracts.Contracts); i++ {
-			if strings.ToLower(trs[j].From) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) && strings.ToLower(trs[j].To) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) {
+			if strings.ToLower(trs[j].From) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) || strings.ToLower(trs[j].To) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) {
 				continue
 			}
 
@@ -158,7 +151,7 @@ func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction) {
 
 			for _, operation := range bm.config.Operations {
 				if operation == method.Name {
-					err = bm.SendWebSocketMsg(raw, method.Name)
+					err = bm.websocket.SendMessage(string(raw), bm.config.WebSocket.Token)
 					if err != nil {
 						bm.logger.Error("block manager - handle transaction - SendWebSocketMsg", zap.String("transaction hash", trs[j].Hash), zap.Error(err))
 						continue

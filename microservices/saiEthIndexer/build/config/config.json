@@ -17,7 +17,7 @@
 		}
 	},
 	"specific": {
-		"geth_server": "https://rpc.ankr.com/bsc_testnet_chapel",
+		"geth_server": "http://geth...com:8545",
 		"storage": {
 			"token": "12345",
 			"url": "http://localhost:8801",
@@ -32,5 +32,4 @@
 			"url": "http://test-websocket:8820"
 		}
 	}
-	
 }

@@ -9,6 +9,9 @@
 ## Run as standalone application
 `./sai-eth-indexer` 
 
+## Run as standalone application in debug mode
+`./sai-eth-indexer --debug` 
+
 # CONFIGURATION
 
 ## config/config.json (application configuration)

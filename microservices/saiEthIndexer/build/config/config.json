@@ -17,7 +17,7 @@
 		}
 	},
 	"specific": {
-		"geth_server": "http://geth-dev.sator.io:8545",
+		"geth_server": "http://geth...com:8545",
 		"storage": {
 			"token": "12345",
 			"url": "http://sai-storage:8818",

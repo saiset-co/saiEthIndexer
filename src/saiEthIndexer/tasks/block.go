@@ -95,7 +95,7 @@ func (bm *BlockManager) SetLastBlock(blk *Block) error {
 func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction) {
 	for j := 0; j < len(trs); j++ {
 		for i := 0; i < len(bm.config.EthContracts.Contracts); i++ {
-			if strings.ToLower(trs[j].From) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) || strings.ToLower(trs[j].To) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) {
+			if strings.ToLower(trs[j].From) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) && strings.ToLower(trs[j].To) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) {
 				continue
 			}
 

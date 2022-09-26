@@ -17,7 +17,7 @@
 		}
 	},
 	"specific": {
-		"geth_server": "http://geth...com:8545",
+		"geth_server": "",
 		"storage": {
 			"token": "",
 			"url": "",

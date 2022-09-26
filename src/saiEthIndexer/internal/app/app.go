@@ -31,7 +31,7 @@ func New(args []string) (*App, error) {
 		err    error
 	)
 	if len(args) <= 1 || args[1] != "--debug" {
-		logger, err = zap.NewProduction()
+		logger, err = zap.NewProduction(zap.AddStacktrace(zap.DPanicLevel))
 	} else {
 		logger, err = zap.NewDevelopment(zap.AddStacktrace(zap.DPanicLevel))
 	}

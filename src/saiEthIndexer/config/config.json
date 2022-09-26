@@ -26,6 +26,11 @@
 		},
 		"start_block": 0,
 		"operations": ["registerAddress","transferTo"],
-		"sleep":20
+		"sleep":20,
+		"websocket": {
+			"token": "hv",
+			"url": "http://test-websocket:8820"
+		}
 	}
 }
+

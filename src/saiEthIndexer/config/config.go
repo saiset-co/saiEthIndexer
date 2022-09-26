@@ -20,6 +20,7 @@ type Specific struct {
 	StartBlock int      `json:"start_block"`
 	Operations []string `json:"operations"`
 	Sleep      int      `json:"sleep"`
+	WebSocket  `json:"websocket"`
 }
 
 // settings for saiStorage
@@ -44,4 +45,9 @@ func (r *Contract) Validate() error {
 type EthContracts struct {
 	Mutex     *sync.RWMutex `json:"-"`
 	Contracts []Contract    `json:"contracts"`
+}
+
+type WebSocket struct {
+	Token string `json:"token"`
+	URL   string `json:"url"`
 }

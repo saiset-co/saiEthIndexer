@@ -107,6 +107,14 @@ func (t *TaskManager) AddContract(contracts []config.Contract) error {
 		blocks = append(blocks, t.Config.EthContracts.Contracts[i].StartBlock)
 	}
 
+	lblk, glbErr := t.BlockManager.GetLastBlock(0)
+	if glbErr != nil {
+		t.Logger.Error("task - addContract - get last block", zap.Error(glbErr))
+		return glbErr
+	}
+
+	blocks = append(blocks, lblk.ID)
+
 	blk := &Block{ID: ix.MinSlice(blocks)}
 	t.BlockManager.SetLastBlock(blk)
 	StopLoop = true

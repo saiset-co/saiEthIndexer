@@ -103,8 +103,8 @@ func (t *TaskManager) AddContract(contracts []config.Contract) error {
 	t.Config.EthContracts.Contracts = append(t.Config.EthContracts.Contracts, contracts...)
 
 	var blocks []int
-	for i := 0; i < len(t.Config.EthContracts.Contracts); i++ {
-		blocks = append(blocks, t.Config.EthContracts.Contracts[i].StartBlock)
+	for i := 0; i < len(contracts); i++ {
+		blocks = append(blocks, contracts[i].StartBlock)
 	}
 
 	lblk, glbErr := t.BlockManager.GetLastBlock(0)

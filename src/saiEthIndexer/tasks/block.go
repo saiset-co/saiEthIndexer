@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/adam-lavrik/go-imath/ix"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/onrik/ethrpc"
 	"github.com/saiset-co/saiEthIndexer/config"
@@ -56,15 +57,22 @@ func (bm *BlockManager) GetLastBlock(id int) (*Block, error) {
 		return &block, nil
 	}
 
-	lastBlock, strErr := strconv.Atoi(string(data))
+	lastDataBlock, strErr := strconv.Atoi(string(data))
 
 	if strErr != nil {
 		log.Println("Data from file can't be converted to int:", err)
 		return &block, nil
 	}
 
-	if lastBlock > 0 {
-		startBlock = lastBlock + 1
+	var lastBlocks []int
+	for i := 0; i < len(bm.config.EthContracts.Contracts); i++ {
+		lastBlocks = append(lastBlocks, bm.config.EthContracts.Contracts[i].StartBlock)
+	}
+
+	if lastDataBlock > 0 {
+		startBlock = lastDataBlock
+	} else if len(lastBlocks) > 0 {
+		startBlock = ix.MinSlice(lastBlocks)
 	} else if bm.config.StartBlock > 0 {
 		startBlock = bm.config.StartBlock
 	} else {
@@ -88,16 +96,19 @@ func (bm *BlockManager) SetLastBlock(blk *Block) error {
 		bm.logger.Error("tasks - BlockManager - set last block - write to file", zap.Error(err))
 	}
 
-	bm.logger.Sugar().Debugf("block %d was saved to storage", blk.ID)
+	bm.logger.Sugar().Debugf("block %d was saved to the temp file", blk.ID)
 	return nil
 }
 
 func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction) {
 	for j := 0; j < len(trs); j++ {
 		for i := 0; i < len(bm.config.EthContracts.Contracts); i++ {
-			if strings.ToLower(trs[j].From) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) || strings.ToLower(trs[j].To) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) {
+			if strings.ToLower(trs[j].From) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) && strings.ToLower(trs[j].To) != strings.ToLower(bm.config.EthContracts.Contracts[i].Address) {
 				continue
 			}
+
+			bm.logger.Sugar().Debugf("TO %s", trs[j].To)
+			bm.logger.Sugar().Debugf("From %s", trs[j].From)
 
 			raw, err := json.Marshal(trs[j])
 			if err != nil {

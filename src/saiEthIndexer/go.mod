@@ -3,7 +3,7 @@ module github.com/saiset-co/saiEthIndexer
 go 1.18
 
 require (
-	github.com/gorilla/websocket v1.5.0
+	github.com/adam-lavrik/go-imath v0.0.0-20210910152346-265a42a96f0b
 	github.com/onrik/ethrpc v1.1.1
 	go.mongodb.org/mongo-driver v1.10.0
 )

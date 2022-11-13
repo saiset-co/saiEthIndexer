@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/adam-lavrik/go-imath/ix"
 	"os"
 	"sync"
 	"time"
@@ -28,6 +29,8 @@ type TaskManager struct {
 	resultChan   chan error
 }
 
+var StopLoop bool
+
 func NewManager(config *config.Configuration, logger *zap.Logger) (*TaskManager, error) {
 	ethClient, err := eth.GetClient(config.Specific.GethServer, logger)
 	if err != nil {
@@ -49,6 +52,7 @@ func NewManager(config *config.Configuration, logger *zap.Logger) (*TaskManager,
 func (t *TaskManager) ProcessBlocks() {
 
 	for {
+		StopLoop = false
 		blockID, err := t.EthClient.EthBlockNumber()
 		if err != nil {
 			t.Logger.Error("tasks - ProcessBlocks - get block number from eth client", zap.Error(err))
@@ -80,12 +84,17 @@ func (t *TaskManager) ProcessBlocks() {
 			t.Logger.Sugar().Debugf("block %d from %d analyzed, %d total transactions", i, blockID, len(blkInfo.Transactions))
 
 			t.BlockManager.HandleTransactions(blkInfo.Transactions)
+
+			if StopLoop {
+				t.Logger.Sugar().Debug("Got new contract, will continue with the new lowest block.")
+				break
+			} else {
+				blk.ID = i
+				t.BlockManager.SetLastBlock(blk)
+			}
 		}
-		blk.ID = blockID
-		t.BlockManager.SetLastBlock(blk)
 
 		time.Sleep(time.Duration(t.Config.Specific.Sleep) * time.Second)
-
 	}
 }
 
@@ -94,11 +103,22 @@ func (t *TaskManager) AddContract(contracts []config.Contract) error {
 	defer t.Config.EthContracts.Mutex.Unlock()
 	t.Config.EthContracts.Contracts = append(t.Config.EthContracts.Contracts, contracts...)
 
-	for _, contract := range t.Config.EthContracts.Contracts {
-		if contract.StartBlock < t.Config.StartBlock {
-			t.Config.StartBlock = contract.StartBlock
-		}
+	var blocks []int
+	for i := 0; i < len(contracts); i++ {
+		blocks = append(blocks, contracts[i].StartBlock)
 	}
+
+	lblk, glbErr := t.BlockManager.GetLastBlock(0)
+	if glbErr != nil {
+		t.Logger.Error("task - addContract - get last block", zap.Error(glbErr))
+		return glbErr
+	}
+
+	blocks = append(blocks, lblk.ID)
+
+	blk := &Block{ID: ix.MinSlice(blocks)}
+	t.BlockManager.SetLastBlock(blk)
+	StopLoop = true
 
 	go t.RewriteContractsConfig(contractsPath)
 

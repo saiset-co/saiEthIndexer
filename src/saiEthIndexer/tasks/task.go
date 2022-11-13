@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -108,6 +109,34 @@ func (t *TaskManager) AddContract(contracts []config.Contract) error {
 	t.Logger.Sugar().Debugf("contracts")
 
 	return nil
+}
+
+// check if some of incomingContracts already exists in contracts file
+func (t *TaskManager) FilterUniqueContracts(incomingContracts []config.Contract) ([]config.Contract, error) {
+	checkedContracts := make([]config.Contract, 0)
+LOOP:
+	for _, incomingContract := range incomingContracts {
+		b, err := json.Marshal(incomingContract)
+		if err != nil {
+			t.Logger.Error("handlers - addContract - filterUniqueContracts - marshal incoming contract", zap.String("contract address", incomingContract.Address), zap.Error(err))
+			return nil, err
+		}
+		incomingHash := sha256.Sum256(b)
+		for _, contract := range t.Config.EthContracts.Contracts {
+			b1, err := json.Marshal(contract)
+			if err != nil {
+				t.Logger.Error("handlers - addContract - filterUniqueContracts - marshal existing contract", zap.String("contract name", incomingContract.Address), zap.Error(err))
+				return nil, err
+			}
+			contractHash := sha256.Sum256(b1)
+			if incomingHash == contractHash {
+				t.Logger.Debug("handlers - addContract - contract already exists", zap.Any("contract", contract))
+				continue LOOP
+			}
+		}
+		checkedContracts = append(checkedContracts, incomingContract)
+	}
+	return checkedContracts, nil
 }
 
 func (t *TaskManager) RewriteContractsConfig(contractsConfigPath string) {

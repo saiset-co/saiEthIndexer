@@ -74,7 +74,14 @@ func (h *HttpHandler) addContract(c *gin.Context) {
 			return
 		}
 	}
-	err = h.TaskManager.AddContract(dto.Contracts)
+
+	contracts, err := h.TaskManager.FilterUniqueContracts(dto.Contracts)
+	if err != nil {
+		h.Logger.Error("http  - add contract - filter unique contracts", zap.Error(err))
+		c.JSON(http.StatusBadRequest, errBadRequest)
+	}
+
+	err = h.TaskManager.AddContract(contracts)
 	if err != nil {
 		h.Logger.Error("http - add contract", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, errInternalServer)

@@ -69,20 +69,35 @@ func (t *TaskManager) ProcessBlocks() {
 
 		for i := blk.ID; i <= blockID; i++ {
 			blkInfo, err := t.EthClient.EthGetBlockByNumber(i, true)
-			if err != nil {
+			if err != nil || blkInfo == nil {
+				blk.ID = i
+				t.BlockManager.SetLastBlock(blk)
 				t.Logger.Error("tasks - ProcessBlocks - get block by number from server", zap.Error(err))
-				i--
 				continue
 			}
 
 			if len(blkInfo.Transactions) == 0 {
+				blk.ID = i
+				t.BlockManager.SetLastBlock(blk)
 				t.Logger.Info("tasks - ProcessBlocks - get block by number from server - transactions - no transactions found", zap.Int("current block id in for cycle", i), zap.Int("current block id from eth server", blockID))
 				continue
 			}
 
 			t.Logger.Sugar().Debugf("block %d from %d analyzed, %d total transactions", i, blockID, len(blkInfo.Transactions))
+			receipts := map[string]*ethrpc.TransactionReceipt{}
 
-			t.BlockManager.HandleTransactions(blkInfo.Transactions)
+			for _, tr := range blkInfo.Transactions {
+				receipt, err := t.EthClient.EthGetTransactionReceipt(tr.Hash)
+
+				if err != nil {
+					t.Logger.Error("tasks - ProcessBlocks - get transaction receipt from server", zap.Error(err))
+					continue
+				}
+
+				receipts[tr.Hash] = receipt
+			}
+
+			t.BlockManager.HandleTransactions(blkInfo.Transactions, receipts)
 
 			if StopLoop {
 				t.Logger.Sugar().Debug("Got new contract, will continue with the new lowest block.")
@@ -103,9 +118,17 @@ func (t *TaskManager) AddContract(contracts []config.Contract) error {
 	t.Config.EthContracts.Contracts = append(t.Config.EthContracts.Contracts, contracts...)
 
 	var blocks []int
-	for i := 0; i < len(t.Config.EthContracts.Contracts); i++ {
-		blocks = append(blocks, t.Config.EthContracts.Contracts[i].StartBlock)
+	for i := 0; i < len(contracts); i++ {
+		blocks = append(blocks, contracts[i].StartBlock)
 	}
+
+	lblk, glbErr := t.BlockManager.GetLastBlock(0)
+	if glbErr != nil {
+		t.Logger.Error("task - addContract - get last block", zap.Error(glbErr))
+		return glbErr
+	}
+
+	blocks = append(blocks, lblk.ID)
 
 	blk := &Block{ID: ix.MinSlice(blocks)}
 	t.BlockManager.SetLastBlock(blk)

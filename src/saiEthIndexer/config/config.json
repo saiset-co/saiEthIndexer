@@ -25,7 +25,8 @@
 			"password": ""
 		},
 		"start_block": 0,
-		"operations": ["registerAddress","transferTo"],
+		"operations": [],
+		"skipFailedTransactions": true,
 		"sleep":20,
 		"websocket": {
 			"token": "hv",

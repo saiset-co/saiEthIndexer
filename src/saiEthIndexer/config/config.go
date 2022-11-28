@@ -15,12 +15,13 @@ type Configuration struct {
 
 // Specific - specific for current microservice settings
 type Specific struct {
-	GethServer string `json:"geth_server"`
-	Storage    `json:"storage"`
-	StartBlock int      `json:"start_block"`
-	Operations []string `json:"operations"`
-	Sleep      int      `json:"sleep"`
-	WebSocket  `json:"websocket"`
+	GethServer             string `json:"geth_server"`
+	Storage                `json:"storage"`
+	StartBlock             int      `json:"start_block"`
+	Operations             []string `json:"operations"`
+	Sleep                  int      `json:"sleep"`
+	WebSocket              `json:"websocket"`
+	SkipFailedTransactions bool `json:"skipFailedTransactions"`
 }
 
 // settings for saiStorage

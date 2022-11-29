@@ -21,6 +21,7 @@
 - start_block - number of block to start parsing 
 - operations - commands under special control
 - sleep - duration after which we get next block from geth server
+- skipFailedTransactions - do not index non successful transactions, default true
 
 ## config/contracts.json (stored on control contracts)
 - address - address of contract

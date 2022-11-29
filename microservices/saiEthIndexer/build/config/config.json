@@ -24,8 +24,9 @@
 			"email": "",
 			"password": ""
 		},
-		"start_block": 34,
-		"operations": ["registerAddress","transferTo"],
+		"start_block": 0,
+		"operations": [],
+		"skipFailedTransactions": true,
 		"sleep":20,
 		"websocket": {
 			"token": "hv",
@@ -33,3 +34,4 @@
 		}
 	}
 }
+

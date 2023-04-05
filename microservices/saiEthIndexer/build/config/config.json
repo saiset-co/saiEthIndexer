@@ -4,23 +4,13 @@
 			"enabled": true,
 			"host": "0.0.0.0",
 			"port": "8817"
-		},
-		"socket_server": {
-			"enabled": false,
-			"host": "0.0.0.0",
-			"port": "8809"
-		},
-		"web_socket": {
-			"enabled": false,
-			"token": "1",
-			"url": "localhost:8820"
 		}
 	},
 	"specific": {
 		"geth_server": "",
 		"storage": {
 			"token": "",
-			"url": "",
+			"url": "http://sai-storage:8801",
 			"email": "",
 			"password": ""
 		},

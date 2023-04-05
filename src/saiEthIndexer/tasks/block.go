@@ -151,7 +151,15 @@ func (bm *BlockManager) HandleReceipts(receipt *ethrpc.TransactionReceipt, _abi 
 func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction, receipts map[string]*ethrpc.TransactionReceipt) {
 	for j := 0; j < len(trs); j++ {
 		for i := 0; i < len(bm.config.EthContracts.Contracts); i++ {
-			status, _ := strconv.ParseBool(receipts[trs[j].Hash].Status[2:])
+			methodName := "Unknown"
+			decodedInput := map[string]interface{}{}
+			status := false
+
+			if len(receipts[trs[j].Hash].Status) > 2 {
+				status, _ = strconv.ParseBool(receipts[trs[j].Hash].Status[2:])
+			} else if len(receipts[trs[j].Hash].Root) > 2 {
+				status = true
+			}
 
 			if bm.config.SkipFailedTransactions && !status {
 				continue
@@ -175,68 +183,68 @@ func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction, receipts ma
 				"Hash":   trs[j].Hash,
 				"From":   trs[j].From,
 				"To":     trs[j].To,
-				"Amount": trs[j].Value,
+				"Amount": trs[j].Value.Uint64(),
 			}
 
-			decodedSig, err := hex.DecodeString(trs[j].Input[2:10])
-
-			if err != nil {
-				bm.logger.Error("block manager - handle transaction - decode transaction function idintifier", zap.String("transaction hash", trs[j].Hash), zap.Error(err))
-				continue
-			}
-
-			_abi, err := abi.JSON(strings.NewReader(bm.config.EthContracts.Contracts[i].ABI))
-			if err != nil {
-				bm.logger.Error("block manager - handle transaction - parse abi from config", zap.String("address", bm.config.EthContracts.Contracts[i].Address), zap.Error(err))
+			_abi, abiErr := abi.JSON(strings.NewReader(bm.config.EthContracts.Contracts[i].ABI))
+			if abiErr != nil {
+				bm.logger.Error("block manager - handle transaction - parse abi from config", zap.String("address", bm.config.EthContracts.Contracts[i].Address), zap.Error(abiErr))
 				continue
 			}
 
 			events, trErr := bm.HandleReceipts(receipts[trs[j].Hash], _abi)
-
 			if trErr != nil {
 				bm.logger.Error("block manager - handle transaction events - HandleReceipts", zap.String("transaction hash", trs[j].Hash), zap.Error(trErr))
 				continue
 			}
 
-			method, err := _abi.MethodById(decodedSig)
-			if err != nil {
-				bm.logger.Error("block manager - handle transaction - MethodById", zap.String("transaction hash", trs[j].Hash), zap.Error(err))
-				continue
-			}
+			decodedInput = map[string]interface{}{}
 
-			decodedData, err := hex.DecodeString(trs[j].Input[2:])
+			if len(trs[j].Input) >= 10 {
+				decodedSig, decSigErr := hex.DecodeString(trs[j].Input[2:10])
+				if decSigErr != nil {
+					bm.logger.Error("block manager - handle transaction - decode transaction function identifier", zap.String("transaction hash", trs[j].Hash), zap.Error(decSigErr))
+					continue
+				}
 
-			if err != nil {
-				bm.logger.Error("block manager - handle transaction - decode input", zap.String("transaction hash", trs[j].Hash), zap.Error(err))
-				continue
-			}
+				method, methodErr := _abi.MethodById(decodedSig)
+				if methodErr != nil {
+					bm.logger.Error("block manager - handle transaction - MethodById", zap.String("transaction hash", trs[j].Hash), zap.Error(methodErr))
+					continue
+				}
 
-			decodedInput := map[string]interface{}{}
-			err = method.Inputs.UnpackIntoMap(decodedInput, decodedData[4:])
+				methodName = method.Name
+				decodedData, decInErr := hex.DecodeString(trs[j].Input[2:])
+				if decInErr != nil {
+					bm.logger.Error("block manager - handle transaction - decode input", zap.String("transaction hash", trs[j].Hash), zap.Error(decInErr))
+					continue
+				}
 
-			if err != nil {
-				bm.logger.Error("block manager - handle transaction - UnpackIntoMap", zap.String("transaction hash", trs[j].Hash), zap.Error(err))
-				continue
+				unpackErr := method.Inputs.UnpackIntoMap(decodedInput, decodedData[4:])
+				if unpackErr != nil {
+					bm.logger.Error("block manager - handle transaction - UnpackIntoMap", zap.String("transaction hash", trs[j].Hash), zap.Error(unpackErr))
+					continue
+				}
 			}
 
 			data["Events"] = events
 			data["Status"] = status
-			data["Operation"] = method.Name
+			data["Operation"] = methodName
 			data["Input"] = decodedInput
 
 			for _, operation := range bm.config.Operations {
-				if operation == method.Name {
-					err = bm.websocket.SendMessage(string(raw), bm.config.WebSocket.Token)
-					if err != nil {
-						bm.logger.Error("block manager - handle transaction - SendWebSocketMsg", zap.String("transaction hash", trs[j].Hash), zap.Error(err))
+				if operation == methodName {
+					wsErr := bm.websocket.SendMessage(string(raw), bm.config.WebSocket.Token)
+					if wsErr != nil {
+						bm.logger.Error("block manager - handle transaction - SendWebSocketMsg", zap.String("transaction hash", trs[j].Hash), zap.Error(wsErr))
 						continue
 					}
 				}
 			}
-			err, _ = bm.storage.Put("transactions", data, bm.config.Storage.Token)
 
-			if err != nil {
-				bm.logger.Error("block manager - handle transaction - storage.Put", zap.String("transaction hash", trs[j].Hash), zap.Error(err))
+			storageErr, _ := bm.storage.Put("transactions", data, bm.config.Storage.Token)
+			if storageErr != nil {
+				bm.logger.Error("block manager - handle transaction - storage.Put", zap.String("transaction hash", trs[j].Hash), zap.Error(storageErr))
 				continue
 			}
 

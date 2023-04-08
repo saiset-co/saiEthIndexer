@@ -30,3 +30,6 @@ curl -X POST <host:port>/v1/add_contract  -H "Content-Type: application/json" -d
 
 ## Delete contract from control list command
 curl -X POST <host:port>/v1/delete_contract  -H "Content-Type: application/json" -d '{"addresses": ["0x9fe3Ace9629468AB8858660f765d329273D94D6E","0x9fe3Ace9629468AB8858660f765d329273D94D6W"]}'
+
+## Profiling
+ `host:port/debug/pprof`

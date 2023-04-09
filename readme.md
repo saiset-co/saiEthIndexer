@@ -26,10 +26,15 @@
 
 
 ## Add contract to control list command
+request : 
 curl -X POST <host:port>/v1/add_contract  -H "Content-Type: application/json" -d '{"contracts": [{"address": "0x9fe3Ace9629468AB8858660f765d329273D94D6D","abi": "324234","start_block":123},{"address": "0x9fe3Ace9629468AB8858660f765d329273D94D6E","abi":"test","start_block":34}]}'
 
+response : `{"is_added":true}`
+
 ## Delete contract from control list command
-curl -X POST <host:port>/v1/delete_contract  -H "Content-Type: application/json" -d '{"addresses": ["0x9fe3Ace9629468AB8858660f765d329273D94D6E","0x9fe3Ace9629468AB8858660f765d329273D94D6W"]}'
+curl -X POST <host:port>/v1/delete_contract  -H "Content-Type: application/json" -d '{"addresses": ["0x9fe3Ace9629468AB8858660f765d329273D94D6D"]}'
+
+response : `{"is_deleted":true}`
 
 ## Profiling
  `host:port/debug/pprof`

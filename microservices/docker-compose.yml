@@ -6,4 +6,4 @@ services:
       context: ./saiEthIndexer
       dockerfile: Dockerfile
     ports:
-      - "8818:8817"
+      - "8817:8817"

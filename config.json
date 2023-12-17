@@ -1,0 +1,37 @@
+{
+	"common": {
+		"http_server": {
+			"enabled": true,
+			"host": "0.0.0.0",
+			"port": "8817"
+		},
+		"socket_server": {
+			"enabled": false,
+			"host": "0.0.0.0",
+			"port": "8809"
+		},
+		"web_socket": {
+			"enabled": false,
+			"token": "1",
+			"url": "localhost:8820"
+		}
+	},
+	"specific": {
+		"geth_server": "",
+		"storage": {
+			"token": "",
+			"url": "",
+			"email": "",
+			"password": ""
+		},
+		"start_block": 0,
+		"operations": [],
+		"skipFailedTransactions": true,
+		"sleep":20,
+		"websocket": {
+			"token": "hv",
+			"url": "http://test-websocket:8820"
+		}
+	}
+}
+

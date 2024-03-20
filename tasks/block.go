@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	repository "github.com/saiset-co/saiEthIndexer/internal/repo"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -16,8 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/onrik/ethrpc"
 	"github.com/saiset-co/saiEthIndexer/config"
-	"github.com/saiset-co/saiEthIndexer/utils/saiStorageUtil"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +24,7 @@ var startBlock int
 
 type BlockManager struct {
 	config    *config.Configuration
-	storage   saiStorageUtil.Database
+	repo      repository.Repo
 	logger    *zap.Logger
 	websocket *WebsocketManager
 }
@@ -42,12 +41,17 @@ type LogTransfer struct {
 }
 
 func NewBlockManager(c config.Configuration, logger *zap.Logger) *BlockManager {
-
 	manager := &BlockManager{
 		config:    &c,
-		storage:   saiStorageUtil.Storage(c.Specific.Storage.URL, c.Storage.Email, c.Storage.Password),
 		logger:    logger,
 		websocket: NewWebSocketManager(c),
+		repo: repository.NewMongoRepo(
+			c.Specific.Storage.Collection,
+			c.Specific.Storage.Email,
+			c.Specific.Storage.Password,
+			c.Specific.Storage.Token,
+			c.Specific.Storage.URL,
+		),
 	}
 
 	return manager
@@ -170,14 +174,6 @@ func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction, receipts ma
 				continue
 			}
 
-			data := bson.M{
-				"Number": trs[j].BlockNumber,
-				"Hash":   trs[j].Hash,
-				"From":   trs[j].From,
-				"To":     trs[j].To,
-				"Amount": trs[j].Value,
-			}
-
 			decodedSig, err := hex.DecodeString(trs[j].Input[2:10])
 
 			if err != nil {
@@ -219,10 +215,17 @@ func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction, receipts ma
 				continue
 			}
 
-			data["Events"] = events
-			data["Status"] = status
-			data["Operation"] = method.Name
-			data["Input"] = decodedInput
+			data := map[string]interface{}{
+				"Number":    trs[j].BlockNumber,
+				"Hash":      trs[j].Hash,
+				"From":      trs[j].From,
+				"To":        trs[j].To,
+				"Amount":    trs[j].Value,
+				"Events":    events,
+				"Status":    status,
+				"Operation": method,
+				"Input":     decodedInput,
+			}
 
 			for _, operation := range bm.config.Operations {
 				if operation == method.Name {
@@ -233,10 +236,10 @@ func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction, receipts ma
 					}
 				}
 			}
-			err, _ = bm.storage.Put("transactions", data, bm.config.Storage.Token)
 
+			err = bm.repo.Create(data)
 			if err != nil {
-				bm.logger.Error("block manager - handle transaction - storage.Put", zap.String("transaction hash", trs[j].Hash), zap.Error(err))
+				bm.logger.Error("block manager - handle transaction - bm.repo.Create", zap.String("tx_hash", trs[j].Hash), zap.Error(err))
 				continue
 			}
 

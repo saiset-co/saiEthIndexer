@@ -26,10 +26,11 @@ type Specific struct {
 
 // settings for saiStorage
 type Storage struct {
-	Token    string `json:"token"`
-	URL      string `json:"url"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Collection string `json:"collection"`
+	Token      string `json:"token"`
+	URL        string `json:"url"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
 }
 
 type Contract struct {

@@ -19,6 +19,7 @@
 	"specific": {
 		"geth_server": "",
 		"storage": {
+			"collection": "",
 			"token": "",
 			"url": "",
 			"email": "",

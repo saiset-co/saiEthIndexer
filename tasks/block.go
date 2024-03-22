@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/saiset-co/saiEthIndexer/internal/notifier"
 	repository "github.com/saiset-co/saiEthIndexer/internal/repo"
 	"io/ioutil"
 	"log"
@@ -25,6 +26,7 @@ var startBlock int
 type BlockManager struct {
 	config    *config.Configuration
 	repo      repository.Repo
+	notifier  notifier.Notifier
 	logger    *zap.Logger
 	websocket *WebsocketManager
 }
@@ -51,6 +53,13 @@ func NewBlockManager(c config.Configuration, logger *zap.Logger) *BlockManager {
 			c.Specific.Storage.Password,
 			c.Specific.Storage.Token,
 			c.Specific.Storage.URL,
+		),
+		notifier: notifier.NewNotifier(
+			c.Specific.Notifier.SenderID,
+			c.Specific.Notifier.Email,
+			c.Specific.Notifier.Password,
+			c.Specific.Notifier.Token,
+			c.Specific.Notifier.URL,
 		),
 	}
 
@@ -240,6 +249,12 @@ func (bm *BlockManager) HandleTransactions(trs []ethrpc.Transaction, receipts ma
 			err = bm.repo.Create(data)
 			if err != nil {
 				bm.logger.Error("block manager - handle transaction - bm.repo.Create", zap.String("tx_hash", trs[j].Hash), zap.Error(err))
+				continue
+			}
+
+			err = bm.notifier.SendTx(data)
+			if err != nil {
+				bm.logger.Error("block manager - send notification - bm.notifier.SendTx", zap.String("tx_hash", trs[j].Hash), zap.Error(err))
 				continue
 			}
 

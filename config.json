@@ -25,6 +25,13 @@
 			"email": "",
 			"password": ""
 		},
+		"notifier": {
+			"sender_id": "",
+			"token": "",
+			"url": "",
+			"email": "",
+			"password": ""
+		},
 		"start_block": 0,
 		"operations": [],
 		"skipFailedTransactions": true,

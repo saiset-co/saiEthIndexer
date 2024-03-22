@@ -21,7 +21,8 @@ type Specific struct {
 	Operations             []string `json:"operations"`
 	Sleep                  int      `json:"sleep"`
 	WebSocket              `json:"websocket"`
-	SkipFailedTransactions bool `json:"skipFailedTransactions"`
+	SkipFailedTransactions bool     `json:"skipFailedTransactions"`
+	Notifier               Notifier `json:"notifier"`
 }
 
 // settings for saiStorage
@@ -31,6 +32,15 @@ type Storage struct {
 	URL        string `json:"url"`
 	Email      string `json:"email"`
 	Password   string `json:"password"`
+}
+
+// settings for notifier service
+type Notifier struct {
+	SenderID string `json:"sender_id"`
+	Token    string `json:"token"`
+	URL      string `json:"url"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type Contract struct {

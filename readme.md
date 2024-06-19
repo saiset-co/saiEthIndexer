@@ -4,9 +4,7 @@ Utility for viewing transactions of specified addresses in ETH SDK based blockch
 If added address found in the transaction, this transaction will be saved to the storage and sent to notification address.
 
 ## Configurations
-
 **config.yml** - common saiService config file.
-You can specify port for http or ws protocol if you need.
 
 ### Common block
 - `http_server` - http server section
@@ -14,7 +12,7 @@ You can specify port for http or ws protocol if you need.
     - `port`    - http server port
 
 ### Specific block
-- `geth_server` - ETH geth server url
+- `geth_server` - ETH server url
 - `storage` - sai-storage http server
   - `url` - sai-storage http server address
   - `token` - sai-storage token
@@ -26,6 +24,12 @@ You can specify port for http or ws protocol if you need.
 - `start_block` - start block height
 - `sleep` - sleep duration between loop iteration(in seconds)
 - `skipFailedTransactions` - TRUE to skip not parsed transaction
+
+## How to run
+`make build`: rebuild and start service  
+`make up`: start service  
+`make down`: stop service  
+`make logs`: display service logs
 
 ## API
 ### Add addresses <host:port>/v1/add_contract

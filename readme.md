@@ -1,32 +1,62 @@
-## Project layout
-1. cmd/app - entry point of application
-2. config - contains whole config and handling specific config options (common options handles in internal/config-internal). Also contains contracts.json, where contracts to control specified
-3. handlers -  defined handlers 
-4. internal - main framework folder
-    app - main application functionality (registering config,storage,handlers and etc)
-    config-internal - common config options (server settings and etx)
-    http - boilerplate code for http server (routing options, middlewares)
-6. tasks - main busyness logic
-7. pkg - common code (start http server, eth client and etc)
-8. utils - code to deal with another sai services and common utils
+# saiEthIndexer
 
+Utility for viewing transactions of specified addresses in ETH SDK based blockchains.
+If added address found in the transaction, this transaction will be saved to the storage and sent to notification address.
 
-## config/config.json (application configuration)
-- common(http_server,socket_server, web_socket) - common server options for http,socket and web socket servers
-- geth-server - geth-server address
-- storage - options for saiStorage
-- start_block - number of block to start parsing 
-- operations - commands under special control
-- sleep - duration after which we get next block from geth server
+## Configurations
 
-## config/contracts.json (stored on control contracts)
-- address - address of contract
-- abi - Application Binary Interface (ABI) of a smart contract 
-- start_block - number of block, from which contract is valid
+**config.yml** - common saiService config file.
+You can specify port for http or ws protocol if you need.
 
+### Common block
+- `http_server` - http server section
+    - `enabled` - enable or disable http handlers
+    - `port`    - http server port
 
-## Add contract to control list command
-curl -X POST <host:port>/v1/add_contract  -H "Content-Type: application/json" -d '{"contracts": [{"address": "0x9fe3Ace9629468AB8858660f765d329273D94D6D","abi": "324234","start_block":123},{"address": "0x9fe3Ace9629468AB8858660f765d329273D94D6E","abi":"test","start_block":34}]}'
+### Specific block
+- `geth_server` - ETH geth server url
+- `storage` - sai-storage http server
+  - `url` - sai-storage http server address
+  - `token` - sai-storage token
+  - `collection` - sai-storage collection name
+- `notifier` - bridge service url
+  - `url` - bridge service url
+  - `token` - bridge service token
+  - `sender_id` - sender name: CYCLONE
+- `start_block` - start block height
+- `sleep` - sleep duration between loop iteration(in seconds)
+- `skipFailedTransactions` - TRUE to skip not parsed transaction
 
-## Delete contract from control list command
-curl -X POST <host:port>/v1/delete_contract  -H "Content-Type: application/json" -d '{"addresses": ["0x9fe3Ace9629468AB8858660f765d329273D94D6E","0x9fe3Ace9629468AB8858660f765d329273D94D6W"]}'
+## API
+### Add addresses <host:port>/v1/add_contract
+```json lines
+{
+  "contracts": [
+    {
+      "address": "$address",
+      "abi": "$abi",
+      "start_block":$start_block
+    },
+    {
+      "address": "$address",
+      "abi": "$abi",
+      "start_block":$start_block
+    }
+  ]
+}
+```
+#### Params
+`$address` <- any contract address to find in transaction
+`$abi` <- abi string quoted
+`$start_block` <- block height to start indexation
+
+### Delete addresses <host:port>/v1/delete_contract
+```json lines
+{
+  "addresses": [
+    "$address","$address"
+  ]
+}
+```
+#### Params
+`$address` <- any contract address to find in transaction

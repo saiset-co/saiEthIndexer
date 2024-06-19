@@ -4,7 +4,7 @@ Utility for viewing transactions of specified addresses in ETH SDK based blockch
 If added address found in the transaction, this transaction will be saved to the storage and sent to notification address.
 
 ## Configurations
-**config.yml** - common saiService config file.
+**config.json** - config file.
 
 ### Common block
 - `http_server` - http server section
